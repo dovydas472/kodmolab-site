@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kodmo Auto – autoserviso valdymo programa</title>
+<meta name="description" content="Kodmo Auto – autoserviso valdymo programa: darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai. Veikia jūsų kompiuteryje.">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kodmo Auto – autoserviso valdymo programa">
+<meta property="og:description" content="Darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai vienoje programoje. Veikia jūsų kompiuteryje.">
+<meta property="og:url" content="https://kodmolab.lt/auto/">
+<meta property="og:image" content="https://kodmolab.lt/auto/og.jpg">
+<meta property="og:locale" content="lt_LT">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://kodmolab.lt/auto/">
+<style>
+/* Layout: Kodmo Lab tema (tamsi plokštė, varis) + Servo gintarinis akcentas.
+   Hero = tikras programos langas + telefonas (išsilygina slenkant); „Pabandykite" = gyva numerio paieška;
+   „Programa iš arti" = tikri langai (kompiuteryje lupa, telefone braukimas); bet kurį vaizdą galima atidaryti
+   per visą ekraną ir didinti (pirštais, dvigubu bakstelėjimu, ratuku); telefonai; duomenys; DUK; kvietimas. */
+:root{
+  --void:#0a0b0d; --board:#111419; --edge:#232830; --app:#1e1e2e;
+  --copper:#d4874a; --copper-hot:#ffcf96; --acc:#f2a33a; --acc-soft:rgba(242,163,58,.14); --ok:#5fbf8a; --bad:#e0624a;
+  --ink:#eef0f2; --dim:#868d97;
+  --display:"Anybody","Arial Black",Impact,sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--void);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.6;overflow-x:hidden}
+body.lock{overflow:hidden}
+a{color:inherit}
+img{max-width:100%;height:auto;display:block}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(20px,env(safe-area-inset-left,0px))}
+.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc)}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:.98;text-wrap:balance;font-stretch:100%;overflow-wrap:break-word}
+
+/* NAV */
+nav{position:absolute;top:0;left:0;right:0;z-index:10}
+nav .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:18px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--display);font-stretch:130%;font-weight:900;font-size:15px;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
+.brand b span{color:var(--acc);font-size:19px}
+.nav-r{display:flex;gap:24px;align-items:center;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.nav-r a{text-decoration:none;color:var(--dim)}
+.nav-r a:hover{color:var(--ink)}
+.nav-r a.cta{color:#170d04;background:var(--acc);padding:9px 14px;border-radius:3px;font-weight:600;white-space:nowrap}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--edge)}
+#pcb{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.75}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,11,13,.94) 0%,rgba(10,11,13,.72) 45%,rgba(10,11,13,.35) 100%),linear-gradient(0deg,var(--void) 0%,transparent 30%)}
+.hero-in{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1.05fr;gap:48px;align-items:center;padding-top:120px;padding-bottom:84px}
+.hero-in>*{min-width:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.chip{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:20px;border:1px solid var(--edge);color:var(--dim);white-space:nowrap;background:rgba(10,11,13,.6)}
+.chip.live{color:var(--acc);border-color:rgba(242,163,58,.4)}
+.chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-right:8px;vertical-align:1px;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{50%{opacity:.25}}
+.hero h1{font-size:clamp(38px,4.9vw,70px);font-weight:900;letter-spacing:-.01em}
+.hero h1 em{font-style:normal;color:var(--acc)}
+.lead{font-size:clamp(18px,1.7vw,21px);color:#cfd3d9;max-width:40ch;margin:22px 0 30px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--mono);font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:15px 22px;border-radius:3px;border:1px solid var(--edge);background:rgba(17,20,25,.7);color:var(--ink);cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .2s}
+.btn.acc{background:var(--acc);border-color:var(--acc);color:#170d04;font-weight:600}
+.btn:hover{border-color:var(--copper-hot)}
+
+.combo{position:relative;padding-bottom:40px;perspective:1400px}
+.frame{background:var(--app);border:1px solid #2c323b;border-radius:10px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.65),0 0 0 1px rgba(242,163,58,.05)}
+.tb{display:flex;justify-content:space-between;align-items:center;background:#252a32;padding:8px 12px;font-size:13px;color:#cfd3d9;gap:12px}
+.tb .ctl{font-family:var(--mono);color:#868d97;letter-spacing:.6em;font-size:11px;white-space:nowrap}
+.combo .frame{transform:rotateY(-9deg) rotateX(3deg);transition:transform .35s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.combo .frame img{cursor:zoom-in}
+.phone{border:9px solid #2a2f37;border-radius:30px;overflow:hidden;background:#0f1114;box-shadow:0 30px 70px rgba(0,0,0,.65)}
+.combo .phone{position:absolute;left:-36px;bottom:0;width:30%;transform:rotate(-4deg);transition:transform .35s cubic-bezier(.2,.8,.2,1);cursor:zoom-in}
+
+/* SECTIONS */
+section{padding:100px 0;border-bottom:1px solid var(--edge);position:relative;overflow-x:clip}
+.head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:40px}
+.head h2,.h2{font-size:clamp(34px,4.8vw,68px);font-weight:900}
+.head p{color:var(--dim);max-width:42ch;margin:0}
+
+/* TRY (paieškos demonstracija) */
+.try{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:48px;align-items:start}
+.try>*{min-width:0}
+.try-l{display:grid;gap:18px}
+.try-l p{color:#c3c8cf;margin:0;max-width:42ch}
+.search{display:flex;gap:10px}
+.plate-in{flex:1;min-width:0;display:flex;align-items:stretch;border:3px solid #111;border-radius:6px;background:#f4f4f0;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+.plate-in span{width:34px;flex:none;background:#1d4fb8;color:#ffd23f;font:600 12px var(--mono);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+.plate-in input{flex:1;min-width:0;width:0;border:0;background:transparent;font:600 30px var(--mono);letter-spacing:.1em;color:#111;padding:8px 12px;text-transform:uppercase;outline:none}
+.plate-in:focus-within{box-shadow:0 0 0 3px var(--acc)}
+.search .btn{padding:0 20px}
+.quick{display:flex;gap:8px;flex-wrap:wrap}
+.quick button{font-family:var(--mono);font-size:14px;letter-spacing:.06em;background:var(--board);border:1px solid var(--edge);border-radius:4px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+.quick button:hover{border-color:var(--acc)}
+.res{background:var(--app);border:1px solid #2c323b;border-radius:10px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.res .body{padding:18px;display:grid;gap:12px;min-height:420px;align-content:start;font-size:15px}
+.st-line{font-family:var(--mono);font-size:13px;color:var(--dim);min-height:20px}
+.st-line.ok{color:var(--ok)}.st-line.bad{color:var(--acc)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1.3fr 1fr .7fr;gap:10px}
+.fld{display:grid;gap:4px;min-width:0}
+.fld label{font-size:12px;color:#8f95a3}
+.inp{background:#15151f;border:1px solid #33354a;border-radius:4px;padding:7px 10px;min-height:36px;font-size:14px;color:#e6e7ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .3s,background .3s}
+.inp.f{border-color:rgba(242,163,58,.55);background:#211d17}
+.warn{font-size:14px;font-weight:600;min-height:21px}
+.warn.red{color:#ef6b5a}.warn.ok{color:var(--ok)}
+.hist{display:grid;gap:6px}
+.hist .r{display:grid;grid-template-columns:96px 1fr auto;gap:10px;background:#15151f;border-radius:4px;padding:7px 10px;font-size:14px;opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+.hist .r.in{opacity:1;transform:none}
+.hist .r span:first-child{font-family:var(--mono);font-size:12px;color:#8f95a3;padding-top:2px}
+.hist .r b{font-weight:500;font-variant-numeric:tabular-nums}
+.new-client{display:none;gap:12px;justify-items:start}
+.new-client.on{display:grid}
+.fake-btn{font-size:14px;background:#2a2d3e;border:1px solid #3c4058;border-radius:4px;padding:8px 14px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--dim);border-top-color:var(--acc);border-radius:50%;animation:rot .7s linear infinite;vertical-align:-1px;margin-right:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* EXPLORER */
+.ex{display:grid;grid-template-columns:270px 1fr;gap:36px;align-items:start}
+.ex>*{min-width:0}
+.tabs{display:grid;gap:4px}
+.tab{position:relative;display:grid;grid-template-columns:34px 1fr;gap:6px;align-items:center;text-align:left;background:transparent;border:1px solid transparent;border-radius:6px;padding:12px 14px;color:var(--dim);font:500 17px var(--body);cursor:pointer;overflow:hidden;transition:background .2s,color .2s,border-color .2s;white-space:nowrap}
+.tab .i{font-family:var(--mono);font-size:12px;color:#4a515c}
+.tab:hover{color:var(--ink);background:var(--board)}
+.tab[aria-selected="true"]{color:var(--ink);background:var(--board);border-color:var(--edge)}
+.tab[aria-selected="true"] .i{color:var(--acc)}
+.tab::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform:scaleX(0);transform-origin:left}
+.tab[aria-selected="true"]::after{transform:scaleX(1)}
+.ex.auto .tab[aria-selected="true"]::after{animation:fill 6s linear forwards}
+.ex.paused .tab[aria-selected="true"]::after{animation-play-state:paused}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.shot{position:relative;height:420px;background:var(--app);cursor:zoom-in;overflow:hidden;touch-action:pan-y;transition:height .45s cubic-bezier(.2,.8,.2,1);user-select:none;-webkit-user-select:none}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center top;opacity:0;transform:translateX(var(--dx,0)) scale(1.015);transition:opacity .45s,transform .6s;pointer-events:none;-webkit-user-drag:none}
+.shot img.on{opacity:1;transform:translateX(var(--dx,0))}
+.shot.drag img.on{transition:opacity .45s}
+.lens{position:absolute;width:250px;height:250px;border-radius:50%;pointer-events:none;border:2px solid var(--acc);box-shadow:0 12px 40px rgba(0,0,0,.6);background-repeat:no-repeat;opacity:0;transition:opacity .15s;z-index:2;background-color:var(--app)}
+.shot.lensing .lens{opacity:1}
+.expand{position:absolute;right:10px;bottom:10px;z-index:3;width:40px;height:40px;border-radius:6px;border:1px solid #3c4058;background:rgba(10,11,13,.75);cursor:pointer;display:grid;place-items:center}
+.expand svg{width:18px;height:18px}
+.dots{display:none;justify-content:center;gap:7px;margin-top:12px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#3a414c;transition:background .2s,width .2s}
+.dots i.on{background:var(--acc);width:20px;border-radius:4px}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:24px;align-items:start;transition:opacity .25s}
+.info h3{font-size:clamp(26px,2.6vw,36px);font-weight:800}
+.info ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.info li{padding-left:22px;position:relative;color:#bfc4cb}
+.info li::before{content:"";position:absolute;left:0;top:.68em;width:10px;height:2px;background:var(--acc)}
+.info .path{font-family:var(--mono);font-size:13px;color:var(--acc);margin-top:10px}
+
+/* PHONES */
+.ph-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
+.ph-grid>*{min-width:0}
+.ph-txt{display:grid;gap:18px}
+.ph-txt p{color:#c3c8cf;max-width:44ch;margin:0}
+.lst{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.lst li{padding-left:22px;position:relative;color:var(--dim)}
+.lst li::before{content:"";position:absolute;left:0;top:.68em;width:10px;height:2px;background:var(--acc)}
+.fan{position:relative;height:620px;margin:0}
+.fan .phone{position:absolute;top:20px;left:50%;width:250px;margin-left:-125px;cursor:zoom-in}
+.fan .phone:nth-child(1){z-index:1}.fan .phone:nth-child(2){z-index:3}.fan .phone:nth-child(3){z-index:2}
+
+/* DATA */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{position:relative;background:var(--board);border:1px solid var(--edge);border-radius:12px;padding:28px;display:grid;gap:12px;align-content:start;overflow:hidden;--mx:50%;--my:50%;isolation:isolate}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .3s;background:radial-gradient(360px circle at var(--mx) var(--my),var(--acc-soft),transparent 60%)}
+.card:hover::before{opacity:1}
+.card svg{width:44px;height:44px;stroke:var(--acc);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:28px;font-weight:800}
+.card p{color:var(--dim);font-size:17px;margin:0}
+
+/* FAQ */
+.faq{display:grid;gap:10px;max-width:860px}
+details{background:var(--board);border:1px solid var(--edge);border-radius:8px;padding:18px 22px;transition:border-color .2s}
+details[open]{border-color:rgba(242,163,58,.35)}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:19px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--acc);font-family:var(--mono);transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{margin:10px 0 0;color:var(--dim)}
+
+/* CTA */
+.cta-box{position:relative;overflow:hidden;border:1px solid rgba(242,163,58,.45);border-radius:16px;padding:clamp(26px,5vw,64px);display:grid;grid-template-columns:1.3fr .7fr;gap:32px;align-items:center;background:radial-gradient(80% 120% at 100% 0%,rgba(242,163,58,.12),transparent 60%),var(--board)}
+.cta-box>*{min-width:0}
+.cta-box h2{font-size:clamp(32px,4.2vw,58px);font-weight:900;margin-top:12px}
+.cta-box p{color:#c3c8cf;margin:14px 0 0;max-width:46ch}
+.cta-side{display:grid;gap:14px;justify-items:start}
+.cta-side .mail{font-family:var(--mono);font-size:18px;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
+footer{padding:30px 0;color:var(--dim);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--dim)}
+
+/* VIEWER (per visą ekraną) */
+.vo{position:fixed;inset:0;z-index:100;background:#07080a;display:none;flex-direction:column}
+.vo.on{display:flex}
+.vo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px max(14px,env(safe-area-inset-left,0px));color:#cfd3d9;font-size:15px}
+.vo-top b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-btn{flex:none;width:44px;height:44px;border-radius:6px;border:1px solid var(--edge);background:var(--board);cursor:pointer;display:grid;place-items:center;font-size:20px;color:var(--ink)}
+.vo-stage{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:grab}
+.vo-stage.grab{cursor:grabbing}
+.vo-stage img{position:absolute;left:50%;top:50%;max-width:none;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.vo-nav{position:absolute;top:50%;margin-top:-24px;width:48px;height:48px;border-radius:50%;border:1px solid var(--edge);background:rgba(17,20,25,.85);cursor:pointer;font-size:22px;color:var(--ink);z-index:2}
+.vo-nav.p{left:12px}.vo-nav.n{right:12px}
+.vo-bar{display:flex;justify-content:center;gap:10px;padding:10px 14px 16px}
+.vo-bar button{font-family:var(--mono);font-size:13px;background:var(--board);border:1px solid var(--edge);border-radius:4px;padding:8px 14px;cursor:pointer;color:var(--ink);min-width:48px}
+
+@media (max-width:980px){
+  .hero-in{grid-template-columns:1fr;padding-top:100px;gap:36px}
+  .combo .phone{left:-6px;width:32%}
+  .try{grid-template-columns:minmax(0,1fr);gap:28px}
+  .ex{grid-template-columns:1fr;gap:18px}
+  .tabs{grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;scroll-snap-type:x proximity}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{grid-template-columns:auto auto;padding:10px 14px;scroll-snap-align:center}
+  .dots{display:flex}
+  .info{grid-template-columns:1fr;gap:14px}
+  .ph-grid{grid-template-columns:1fr}
+  .fan{height:520px}
+  .fan .phone{width:210px;margin-left:-105px}
+  .cards{grid-template-columns:1fr}
+  .cta-box{grid-template-columns:1fr}
+  .nav-r a:not(.cta){display:none}
+}
+@media (max-width:560px){
+  body{font-size:17px}
+  .brand b .lab{display:none}
+  .g2,.g3{grid-template-columns:1fr 1fr}
+  .g3 .fld:last-child{grid-column:span 2}
+  .res .body{min-height:0}
+  .fan{height:440px}
+  .fan .phone{width:170px;margin-left:-85px}
+  .plate-in input{font-size:24px}
+  .search{flex-direction:column}
+  .search .btn{padding:14px}
+  .vo-nav{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" id="homeLink" href="#" aria-label="Kodmo Lab pagrindinis puslapis">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#111419" stroke="#d4874a" stroke-width="2"/><path d="M13 9v22M13 21l12-12M17 17l9 14" stroke="#d4874a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="25" cy="9" r="2.6" fill="#ffcf96"/><circle cx="26" cy="31" r="2.6" fill="#ffcf96"/><circle cx="13" cy="31" r="2.6" fill="#ffcf96"/></svg>
+      <b>KODMO <span>AUTO</span></b>
+    </a>
+    <div class="nav-r">
+      <a href="#pabandykite">Pabandykite</a>
+      <a href="#programa">Programa</a>
+      <a href="#duk">DUK</a>
+      <a class="cta js-mail" href="#">Susisiekti</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <canvas id="pcb" aria-hidden="true"></canvas>
+  <div class="wrap hero-in">
+    <div>
+      <div class="chips"><span class="chip">Windows · lietuvių kalba</span><span class="chip live">Testavimo etapas</span></div>
+      <h1>Visas autoservisas <em>vienoje programoje</em></h1>
+      <p class="lead">Darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai. Programa veikia jūsų kompiuteryje, o mechanikai dirba ir telefonu.</p>
+      <div class="btns">
+        <a class="btn acc mag js-mail" href="#">Susisiekti dėl testavimo</a>
+        <a class="btn mag" href="#pabandykite">Pabandyti</a>
+      </div>
+    </div>
+    <div class="combo" id="combo">
+      <div class="frame">
+        <div class="tb"><span>📋 Visi darbai</span><span class="ctl">–☐✕</span></div>
+        <img src="img/darbai.webp" width="2360" height="1320" data-view="darbai" alt="Programos langas „Visi darbai“ su spalvotomis darbų būsenomis">
+      </div>
+      <div class="phone" data-view="tel-darbai"><img src="img/tel-darbai.webp" width="585" height="1266" alt="Mechaniko darbų sąrašas telefone"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="pabandykite">
+  <div class="wrap try">
+    <div class="try-l">
+      <div class="eyebrow">Pabandykite</div>
+      <h2 class="h2">Įveskite valstybinį numerį</h2>
+      <p>Taip prasideda kiekvienas darbas. Pagal numerį programa randa klientą, automobilį ir ankstesnius remontus.</p>
+      <form class="search" id="sform" autocomplete="off">
+        <label class="plate-in" for="plate"><span>LT</span><input id="plate" name="plate" maxlength="7" placeholder="PVZ 001" inputmode="text" autocapitalize="characters" spellcheck="false" aria-label="Valstybinis numeris"></label>
+        <button class="btn acc" type="submit">Ieškoti</button>
+      </form>
+      <div class="quick" aria-label="Pavyzdiniai numeriai">
+        <button type="button" data-p="PVZ 001">PVZ 001</button>
+        <button type="button" data-p="PVZ 005">PVZ 005</button>
+        <button type="button" data-p="PVZ 009">PVZ 009</button>
+        <button type="button" data-p="ABC 123">ABC 123</button>
+      </div>
+    </div>
+    <div class="res" aria-live="polite">
+      <div class="tb"><span>➕ Naujas darbas</span><span class="ctl">–☐✕</span></div>
+      <div class="body">
+        <div class="st-line" id="st">Laukiama numerio</div>
+        <div class="found" id="found" style="display:grid;gap:12px">
+          <div class="g2">
+            <div class="fld"><label>Vardas</label><div class="inp" data-k="name"></div></div>
+            <div class="fld"><label>Telefonas</label><div class="inp" data-k="tel"></div></div>
+          </div>
+          <div class="g3">
+            <div class="fld"><label>Automobilis</label><div class="inp" data-k="car"></div></div>
+            <div class="fld"><label>Variklis</label><div class="inp" data-k="eng"></div></div>
+            <div class="fld"><label>Metai</label><div class="inp" data-k="year"></div></div>
+          </div>
+          <div class="g2">
+            <div class="fld"><label>VIN</label><div class="inp" data-k="vin"></div></div>
+            <div class="fld"><label>VTA galioja iki</label><div class="inp" data-k="vta"></div></div>
+          </div>
+          <div class="warn" id="warn"></div>
+          <div class="fld"><label>Ankstesni remontai</label><div class="hist" id="hist"></div></div>
+        </div>
+        <div class="new-client" id="newc">
+          <p style="margin:0;color:#c3c8cf">Klientas su tokiu numeriu nerastas. Programa pasiūlys jį užregistruoti kartu su automobiliu.</p>
+          <span class="fake-btn">👤 Registruoti naują klientą</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="programa">
+  <div class="wrap">
+    <div class="head">
+      <h2>Programa iš arti</h2>
+      <p>Tikri programos langai su pavyzdiniais duomenimis.</p>
+    </div>
+    <div class="ex" id="ex">
+      <div class="tabs" role="tablist" aria-label="Programos dalys" id="tabs"></div>
+      <div class="viewer">
+        <div class="frame">
+          <div class="tb"><span id="wt">➕ Naujas darbas</span><span class="ctl">–☐✕</span></div>
+          <div class="shot" id="shot" role="tabpanel" aria-labelledby="tab-0">
+            <div class="lens" id="lens"></div>
+            <button class="expand" id="expand" type="button" aria-label="Atidaryti per visą ekraną"><svg viewBox="0 0 24 24" fill="none" stroke="#eef0f2" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+        </div>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+        <div class="info" id="info"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="telefonas">
+  <div class="wrap ph-grid">
+    <div class="ph-txt">
+      <div class="eyebrow">Telefonas</div>
+      <h2 class="h2">Mechanikas dirba su telefonu</h2>
+      <p>Programa atsidaro telefono naršyklėje per dirbtuvių Wi-Fi. Mechanikas mato savo darbus, keičia jų būseną, rašo pastabas ir įkelia nuotraukas. Direktorius mato visus darbus, skolas ir ataskaitas.</p>
+      <ul class="lst">
+        <li>Nepriskirtą darbą mechanikas gali pasiimti pats.</li>
+        <li>Veikia tik vietiniame tinkle, iš interneto nepasiekiama.</li>
+      </ul>
+    </div>
+    <figure class="fan" id="fan">
+      <div class="phone" data-view="tel-direktorius"><img src="img/tel-direktorius.webp" width="585" height="1266" loading="lazy" alt="Direktoriaus pradžios ekranas telefone"></div>
+      <div class="phone" data-view="tel-darbai"><img src="img/tel-darbai.webp" width="585" height="1266" loading="lazy" alt="Mechaniko darbų sąrašas telefone"></div>
+      <div class="phone" data-view="tel-detales"><img src="img/tel-detales.webp" width="585" height="1266" loading="lazy" alt="Darbo detalės su mechaniko pastabomis telefone"></div>
+    </figure>
+  </div>
+</section>
+
+<section id="duomenys">
+  <div class="wrap">
+    <div class="head"><h2>Duomenys ir saugumas</h2></div>
+    <div class="cards">
+      <article class="card">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 18a24 24 0 0 1 32 0M14 25a15 15 0 0 1 20 0M20 32a6 6 0 0 1 8 0"/><circle cx="24" cy="38" r="1.6" fill="#f2a33a"/><path d="M8 8l32 32"/></svg>
+        <h3>Be interneto</h3><p>Kasdieniam darbui internetas nereikalingas. Jo reikia tik siunčiant el. laiškus klientams.</p></article>
+      <article class="card">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="10" width="32" height="22" rx="2"/><path d="M18 38h12M24 32v6"/><rect x="19" y="17" width="10" height="9" rx="1.5"/><path d="M21 17v-2a3 3 0 0 1 6 0v2"/></svg>
+        <h3>Duomenys pas jus</h3><p>Visi duomenys saugomi jūsų kompiuteryje. Kūrėjai prie jų prieigos neturi.</p></article>
+      <article class="card">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="12" width="20" height="24" rx="2"/><rect x="22" y="16" width="20" height="24" rx="2" fill="#111419"/><path d="M27 28h10M32 23v10"/></svg>
+        <h3>Atsarginės kopijos</h3><p>Kopija daroma kasdien automatiškai. Įdiegiant nustatoma antra vieta: USB atmintinė arba debesies aplankas.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="duk">
+  <div class="wrap">
+    <div class="head"><h2>Dažni klausimai</h2></div>
+    <div class="faq">
+      <details><summary>Kur saugomi klientų duomenys?</summary><p>Tik jūsų kompiuteryje. Programa jų niekur nesiunčia.</p></details>
+      <details><summary>Ar reikia interneto?</summary><p>Kasdieniam darbui ne. Internetas reikalingas tik siunčiant klientams el. laiškus: priminimus ir pranešimus, kad automobilis paruoštas.</p></details>
+      <details><summary>Ar tinka ne PVM mokėtojui?</summary><p>Taip. Ne PVM mokėtojo sąskaitoje PVM nėra, o dokumentas vadinasi „Sąskaita faktūra“.</p></details>
+      <details><summary>Kas bus, jei sugenda kompiuteris?</summary><p>Jei nustatyta antra kopijų vieta, duomenis galima perkelti į naują kompiuterį iš tos kopijos.</p></details>
+      <details><summary>Kaip atnaujinama programa?</summary><p>Paleidžiamas naujas diegimo failas. Duomenys laikomi atskirai, atnaujinimas jų neliečia.</p></details>
+      <details><summary>Kokio kompiuterio reikia?</summary><p>Windows 10 arba naujesnio.</p></details>
+      <details><summary>Kiek kainuos?</summary><p>Kainos bus paskelbtos pasibaigus testavimui.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="testavimas" style="border-bottom:0">
+  <div class="wrap">
+    <div class="cta-box">
+      <div>
+        <div class="eyebrow">Testavimas</div>
+        <h2>Šiuo metu programa testuojama</h2>
+        <p>Prisijungusiems prie testavimo bus taikoma nuolaida. Parašykite, ir susitarsime dėl įdiegimo.</p>
+      </div>
+      <div class="cta-side">
+        <a class="btn acc mag js-mail" href="#">Susisiekti <span aria-hidden="true">→</span></a>
+        <a class="mail js-mail" href="#">info@kodmolab.lt</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Kodmo Lab</span>
+    <!-- Rekvizitai: įrašyti po IV registracijos -->
+    <a class="js-home" href="#">kodmolab.lt</a>
+  </div>
+</footer>
+
+<div class="vo" id="vo" role="dialog" aria-modal="true" aria-label="Vaizdas per visą ekraną">
+  <div class="vo-top"><b id="voT"></b><button class="vo-btn" id="voX" type="button" aria-label="Uždaryti">✕</button></div>
+  <div class="vo-stage" id="voS">
+    <img id="voI" alt="">
+    <button class="vo-nav p" id="voP" type="button" aria-label="Ankstesnis">‹</button>
+    <button class="vo-nav n" id="voN" type="button" aria-label="Kitas">›</button>
+  </div>
+  <div class="vo-bar">
+    <button type="button" id="voOut" aria-label="Mažinti">−</button>
+    <button type="button" id="voFit">Visas vaizdas</button>
+    <button type="button" id="voIn" aria-label="Didinti">+</button>
+  </div>
+</div>
+
+<script>
+/* === Nustatymai === */
+const PRODUCT_NAME = "Kodmo Auto";
+const HOME_URL = "/";
+const MAILTO = "mailto:info@kodmolab.lt?subject=" + encodeURIComponent(PRODUCT_NAME + " testavimas");
+
+document.querySelectorAll("[data-name]").forEach(e => e.textContent = PRODUCT_NAME);
+document.title = PRODUCT_NAME + " – autoserviso valdymo programa";
+document.querySelectorAll(".js-mail").forEach(a => a.href = MAILTO);
+document.getElementById("homeLink").href = HOME_URL;
+document.querySelectorAll(".js-home").forEach(a => a.href = HOME_URL);
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------- Visi vaizdai (vienas sąrašas peržiūrai per visą ekraną) ---------- */
+const IMAGES = {
+  "naujas-darbas":   { t: "Naujas darbas", w: 2360, h: 1540 },
+  "darbai":          { t: "Visi darbai", w: 2360, h: 1320 },
+  "darbo-detales":   { t: "Darbo detalės", w: 2040, h: 1300 },
+  "automobiliai":    { t: "Automobiliai ir istorija", w: 2080, h: 1360 },
+  "saskaitos":       { t: "Sąskaitų faktūrų valdymas", w: 2400, h: 1240 },
+  "saskaita-pdf":    { t: "Sąskaita faktūra (PDF)", w: 1191, h: 1684 },
+  "skolos":          { t: "Neapmokėtos sąskaitos", w: 2200, h: 840 },
+  "vta":             { t: "VTA priminimai", w: 2200, h: 920 },
+  "tel-direktorius": { t: "Telefonas: direktorius", w: 585, h: 1266 },
+  "tel-darbai":      { t: "Telefonas: mechaniko darbai", w: 585, h: 1266 },
+  "tel-detales":     { t: "Telefonas: darbo detalės", w: 585, h: 1266 },
+};
+const ORDER = Object.keys(IMAGES);
+const src = k => "img/" + k + ".webp";
+
+/* ---------- Programos dalys (tekstai – tik iš FUNKCIJOS_MARKETINGUI.md) ---------- */
+const PARTS = [
+  { k: "naujas-darbas", tab: "Naujas darbas", title: "➕ Naujas darbas",
+    h3: "Klientas randamas pagal numerį", path: "DARBAI → Naujas darbas",
+    li: ["Įvedus numerį, kliento ir automobilio duomenys užsipildo patys.", "Jau įvesti duomenys neperrašomi, trūkstami papildomi.", "Automobilį galima priimti ir be darbų, o juos pridėti vėliau."] },
+  { k: "darbai", tab: "Darbai", title: "📋 Visi darbai",
+    h3: "Darbų būsenos spalvomis", path: "DARBAI → Darbai",
+    li: ["Nepriimtas, priimtas, vykdomas, atliktas, atšauktas.", "Pasirinkus spalvą, sąraše lieka tik tos būsenos darbai.", "Direktorius darbus priskiria mechanikams."] },
+  { k: "darbo-detales", tab: "Darbo detalės", title: "🔧 Darbo detalės",
+    h3: "Visa darbo istorija", path: "DARBAI → Darbai → darbo kortelė",
+    li: ["Kiekviena pastaba įrašoma su laiku ir autoriumi.", "Įrašų pakeisti ar ištrinti negalima, klaida taisoma nauju įrašu.", "Prie nuotraukų galima pridėti komentarus."] },
+  { k: "automobiliai", tab: "Automobiliai", title: "🚗 Automobiliai ir istorija",
+    h3: "Keli automobiliai vienam klientui", path: "Klientai → Automobiliai ir istorija",
+    li: ["Kiekvienam automobiliui saugomi VIN, rida ir VTA data.", "Remontų istorija pagal automobilį.", "Parduotą automobilį galima perkelti naujam savininkui."] },
+  { k: "saskaitos", tab: "Sąskaitos", title: "💰 Sąskaitų faktūrų valdymas",
+    h3: "Sąskaitos ir mokėjimai", path: "BUHALTERIJA → Sąskaitos faktūros",
+    li: ["Serija ir numeris suteikiami automatiškai.", "Išrašytos sąskaitos turinys vėliau nebesikeičia.", "Galima apmokėti dalimis, įvairiais būdais."] },
+  { k: "saskaita-pdf", tab: "Sąskaitos PDF", title: "📄 Sąskaita faktūra (PDF)",
+    h3: "Dokumentas klientui", path: "DARBAI → Darbai → Atlikti + PDF",
+    li: ["PVM sąskaita faktūra arba darbų lapas.", "Ne PVM mokėtojo dokumente PVM nerodomas.", "Dokumentą galima išsiųsti klientui el. paštu."] },
+  { k: "skolos", tab: "Skolos", title: "📋 Direktoriaus suvestinė",
+    h3: "Visos neapmokėtos sąskaitos", path: "DARBAI → Patvirtinimai & Skolos",
+    li: ["Bendra nesumokėta suma matoma iš karto.", "Mokėjimas registruojamas pasirinktai sąskaitai.", "Klientui galima išsiųsti priminimą su sąskaitos PDF."] },
+  { k: "vta", tab: "VTA priminimai", title: "📋 Direktoriaus suvestinė",
+    h3: "Techninės apžiūros terminai", path: "Patvirtinimai & Skolos → VTA priminimai",
+    li: ["Rodomi automobiliai, kurių VTA baigiasi per 14 dienų.", "Pasibaigę terminai pažymėti raudonai.", "Priminimas klientui išsiunčiamas vienu mygtuku."] },
+];
+
+/* ---------- Peržiūra per visą ekraną: didinimas pirštais, dvigubu bakstelėjimu, ratuku ---------- */
+const Viewer = (function(){
+  const vo = document.getElementById("vo"), st = document.getElementById("voS"), im = document.getElementById("voI"), tt = document.getElementById("voT");
+  let list = [], idx = 0, s = 1, fit = 1, x = 0, y = 0, W = 0, H = 0, iw = 0, ih = 0, opener = null;
+  const ptr = new Map(); let pinch = null, drag = null, lastTap = 0, swipe = null;
+  function apply(){ im.style.transform = `translate(${x}px,${y}px) scale(${s})`; }
+  function bound(){
+    const dw = iw * s, dh = ih * s;
+    x = dw <= W ? (W - dw) / 2 - W / 2 : clamp(x, W / 2 - dw, -W / 2);
+    y = dh <= H ? (H - dh) / 2 - H / 2 : clamp(y, H / 2 - dh, -H / 2);
+  }
+  function zoomAt(ns, cx, cy){
+    ns = clamp(ns, fit, Math.max(fit * 4, 1.5));
+    const px = cx - W / 2, py = cy - H / 2;
+    x = px - (px - x) * ns / s; y = py - (py - y) * ns / s; s = ns; bound(); apply();
+  }
+  function reset(){
+    W = st.clientWidth; H = st.clientHeight;
+    fit = Math.min(W / iw, H / ih, 1); s = fit; x = -iw * s / 2; y = -ih * s / 2; bound(); apply();
+  }
+  function load(i){
+    idx = (i + list.length) % list.length; const k = list[idx], m = IMAGES[k];
+    iw = m.w; ih = m.h; im.width = iw; im.height = ih; im.src = src(k); im.alt = m.t; tt.textContent = m.t;
+    document.getElementById("voP").style.visibility = document.getElementById("voN").style.visibility = list.length > 1 ? "" : "hidden";
+    reset();
+  }
+  function open(keys, start){
+    list = keys; opener = document.activeElement; vo.classList.add("on"); document.body.classList.add("lock");
+    load(Math.max(0, keys.indexOf(start))); document.getElementById("voX").focus();
+  }
+  function close(){ vo.classList.remove("on"); document.body.classList.remove("lock"); if (opener && opener.focus) opener.focus(); }
+  st.addEventListener("pointerdown", e => {
+    if (e.target.closest("button")) return;
+    st.setPointerCapture(e.pointerId); ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s }; drag = null; swipe = null; }
+    else { drag = { x: e.clientX, y: e.clientY, ox: x, oy: y }; swipe = { x: e.clientX, y: e.clientY, t: Date.now() }; st.classList.add("grab"); }
+  });
+  st.addEventListener("pointermove", e => {
+    if (!ptr.has(e.pointerId)) return;
+    ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const r = st.getBoundingClientRect();
+    if (pinch && ptr.size === 2) {
+      const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      zoomAt(pinch.s * d / pinch.d, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+    } else if (drag && s > fit + .001) { x = drag.ox + e.clientX - drag.x; y = drag.oy + e.clientY - drag.y; bound(); apply(); }
+  });
+  function up(e){
+    if (!ptr.has(e.pointerId)) return;
+    ptr.delete(e.pointerId); st.classList.remove("grab");
+    if (ptr.size < 2) pinch = null;
+    if (swipe && ptr.size === 0) {
+      const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y, moved = Math.hypot(dx, dy);
+      if (s <= fit + .001 && Math.abs(dx) > 60 && Math.abs(dy) < 60 && list.length > 1) load(idx + (dx < 0 ? 1 : -1));
+      else if (moved < 8) {
+        const now = Date.now(), r = st.getBoundingClientRect();
+        if (now - lastTap < 320) { zoomAt(s > fit + .001 ? fit : Math.min(fit * 2.5, Math.max(fit * 2.5, 1)), e.clientX - r.left, e.clientY - r.top); lastTap = 0; }
+        else lastTap = now;
+      }
+      swipe = null; drag = null;
+    }
+  }
+  st.addEventListener("pointerup", up); st.addEventListener("pointercancel", up);
+  st.addEventListener("wheel", e => { e.preventDefault(); const r = st.getBoundingClientRect(); zoomAt(s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  document.getElementById("voX").onclick = close;
+  document.getElementById("voP").onclick = () => load(idx - 1);
+  document.getElementById("voN").onclick = () => load(idx + 1);
+  document.getElementById("voIn").onclick = () => zoomAt(s * 1.5, W / 2, H / 2);
+  document.getElementById("voOut").onclick = () => zoomAt(s / 1.5, W / 2, H / 2);
+  document.getElementById("voFit").onclick = reset;
+  addEventListener("keydown", e => {
+    if (!vo.classList.contains("on")) return;
+    if (e.key === "Escape") close();
+    if (e.key === "ArrowRight") load(idx + 1);
+    if (e.key === "ArrowLeft") load(idx - 1);
+  });
+  addEventListener("resize", () => { if (vo.classList.contains("on")) reset(); });
+  return { open };
+})();
+
+/* Bet kuris vaizdas su data-view atsidaro per visą ekraną */
+document.querySelectorAll("[data-view]").forEach(el => {
+  el.addEventListener("click", () => {
+    const k = el.dataset.view, phone = k.startsWith("tel-");
+    Viewer.open(ORDER.filter(x => x.startsWith("tel-") === phone), k);
+  });
+});
+
+/* ---------- Pabandykite: numerio paieška ---------- */
+(function(){
+  const day = 864e5, today = new Date();
+  const d = n => { const t = new Date(today.getTime() + n * day); while (t.getDay() === 0 || t.getDay() === 6) t.setTime(t.getTime() - day); return t.toISOString().slice(0, 10); };
+  const DB = {
+    "PVZ001": { name: "Jonas Jonaitis", tel: "+370 000 00001", car: "Škoda Octavia", eng: "1.4 TSI, benzinas", year: "2017", vin: "TMB00000000000001", vta: 9,
+      hist: [[-11, "Alyvos ir filtro keitimas", "95,25 €"], [-96, "Priekinių stabdžių kaladėlių keitimas", "112,40 €"], [-210, "Tech. apžiūros paruošimas", "30,00 €"]] },
+    "PVZ005": { name: "Vardenė Pavardenė", tel: "+370 000 00005", car: "Toyota Corolla", eng: "1.6, benzinas", year: "2015", vin: "TMB00000000000005", vta: 3,
+      hist: [[-5, "Alyvos ir filtro keitimas", "73,75 €"], [-14, "Aušinimo skysčio keitimas", "53,00 €"]] },
+    "PVZ009": { name: "Dalia Dalytė", tel: "+370 000 00009", car: "Renault Megane", eng: "1.5 dCi, dyzelinas", year: "2012", vin: "TMB00000000000009", vta: -4,
+      hist: [[-10, "Priekinių stabdžių kaladėlių keitimas", "94,90 €"], [-160, "Padangų montavimas (4 vnt.)", "40,00 €"]] },
+  };
+  const inp = document.getElementById("plate"), stl = document.getElementById("st"), found = document.getElementById("found");
+  const newc = document.getElementById("newc"), warn = document.getElementById("warn"), hist = document.getElementById("hist");
+  const fields = [...found.querySelectorAll("[data-k]")];
+  let run = 0;
+  function norm(v){ return v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6); }
+  function fmt(v){ const n = norm(v); return n.length > 3 ? n.slice(0, 3) + " " + n.slice(3) : n; }
+  function clear(){
+    fields.forEach(f => { f.textContent = ""; f.classList.remove("f"); });
+    warn.textContent = ""; warn.className = "warn"; hist.innerHTML = ""; newc.classList.remove("on"); found.style.display = "grid";
+  }
+  async function search(){
+    const id = ++run, key = norm(inp.value);
+    if (key.length < 6) { stl.className = "st-line"; stl.textContent = "Įveskite visą numerį, pvz. PVZ 001"; return; }
+    clear(); stl.className = "st-line"; stl.innerHTML = '<span class="spin"></span>Ieškoma…';
+    await wait(reduce ? 0 : 450); if (id !== run) return;
+    const c = DB[key];
+    if (!c) { found.style.display = "none"; newc.classList.add("on"); stl.className = "st-line bad"; stl.textContent = "Klientas nerastas"; return; }
+    stl.className = "st-line ok"; stl.textContent = "✓ Klientas rastas: " + c.name;
+    const vals = { name: c.name, tel: c.tel, car: c.car, eng: c.eng, year: c.year, vin: c.vin, vta: new Date(today.getTime() + c.vta * day).toISOString().slice(0, 10) };
+    for (const f of fields) { if (id !== run) return; f.textContent = vals[f.dataset.k]; f.classList.add("f"); await wait(reduce ? 0 : 90); }
+    if (c.vta < 0) { warn.className = "warn red"; warn.textContent = "⚠ VTA pasibaigusi"; }
+    else if (c.vta <= 14) { warn.className = "warn red"; warn.textContent = `⚠ VTA baigiasi po ${c.vta} d.`; }
+    for (const [n, w, sum] of c.hist) {
+      if (id !== run) return;
+      const r = document.createElement("div"); r.className = "r"; r.innerHTML = `<span>${d(n)}</span><span>${w}</span><b>${sum}</b>`;
+      hist.appendChild(r); requestAnimationFrame(() => r.classList.add("in")); await wait(reduce ? 0 : 120);
+    }
+  }
+  inp.addEventListener("input", () => {
+    const pos = inp.value.length; inp.value = fmt(inp.value);
+    if (norm(inp.value).length === 6) search();
+  });
+  document.getElementById("sform").addEventListener("submit", e => { e.preventDefault(); search(); inp.blur(); });
+  document.querySelectorAll(".quick button").forEach(b => b.addEventListener("click", async () => {
+    const t = b.dataset.p; run++; inp.value = "";
+    for (const ch of t) { inp.value += ch; await wait(reduce ? 0 : 55); }
+    search();
+  }));
+  clear();
+})();
+
+/* ---------- Programos naršyklė ---------- */
+(function(){
+  const tabs = document.getElementById("tabs"), shot = document.getElementById("shot"), info = document.getElementById("info");
+  const wt = document.getElementById("wt"), lens = document.getElementById("lens"), ex = document.getElementById("ex"), dotsEl = document.getElementById("dots");
+  const imgs = PARTS.map((p, i) => {
+    const m = IMAGES[p.k], im = new Image(); im.src = src(p.k); im.alt = "Programos langas: " + p.tab;
+    im.width = m.w; im.height = m.h; if (i) im.loading = "lazy"; im.draggable = false; shot.appendChild(im); return im;
+  });
+  const dots = PARTS.map(() => { const i = document.createElement("i"); dotsEl.appendChild(i); return i; });
+  const btns = PARTS.map((p, i) => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.id = "tab-" + i; b.setAttribute("role", "tab");
+    b.setAttribute("aria-controls", "shot"); b.innerHTML = `<span class="i">${String(i + 1).padStart(2, "0")}</span><span>${p.tab}</span>`;
+    b.addEventListener("click", () => { stopAuto(); show(i); });
+    b.addEventListener("keydown", e => {
+      const k = e.key, n = PARTS.length;
+      if (k === "ArrowDown" || k === "ArrowRight") { e.preventDefault(); stopAuto(); show((cur + 1) % n); btns[cur].focus(); }
+      if (k === "ArrowUp" || k === "ArrowLeft") { e.preventDefault(); stopAuto(); show((cur - 1 + n) % n); btns[cur].focus(); }
+    });
+    tabs.appendChild(b); return b;
+  });
+  let cur = -1, timer = 0;
+  function layout(){
+    if (cur < 0) return;
+    const m = IMAGES[PARTS[cur].k], W = shot.clientWidth, maxH = Math.max(300, innerHeight * .7);
+    shot.style.height = Math.round(Math.min(W * m.h / m.w, maxH)) + "px";
+  }
+  addEventListener("resize", layout);
+  function shown(){
+    const m = IMAGES[PARTS[cur].k], W = shot.clientWidth, H = shot.clientHeight, k = Math.min(W / m.w, H / m.h);
+    return { ox: (W - m.w * k) / 2, oy: 0, dw: m.w * k, dh: m.h * k };
+  }
+  function show(i){
+    if (i === cur) return; cur = i;
+    btns.forEach((b, k) => { b.setAttribute("aria-selected", String(k === i)); b.tabIndex = k === i ? 0 : -1; });
+    imgs.forEach((im, k) => im.classList.toggle("on", k === i));
+    dots.forEach((d, k) => d.classList.toggle("on", k === i));
+    shot.setAttribute("aria-labelledby", "tab-" + i);
+    const p = PARTS[i]; wt.textContent = p.title; layout();
+    info.style.opacity = 0;
+    setTimeout(() => {
+      info.innerHTML = `<div><h3>${p.h3}</h3><div class="path">${p.path}</div></div><ul>${p.li.map(t => `<li>${t}</li>`).join("")}</ul>`;
+      info.style.opacity = 1;
+    }, info.innerHTML ? 160 : 0);
+    if (ex.classList.contains("auto")) { ex.classList.remove("auto"); void ex.offsetWidth; ex.classList.add("auto"); }
+    const tr = tabs.getBoundingClientRect(), br = btns[i].getBoundingClientRect();
+    if (tabs.scrollWidth > tabs.clientWidth) tabs.scrollTo({ left: tabs.scrollLeft + br.left - tr.left - (tr.width - br.width) / 2, behavior: reduce ? "auto" : "smooth" });
+  }
+  function stopAuto(){ clearInterval(timer); timer = 0; ex.classList.remove("auto"); }
+  show(0);
+  if (!reduce) {
+    let started = false;
+    new IntersectionObserver(es => {
+      if (es[0].isIntersecting && !started) {
+        started = true; ex.classList.add("auto");
+        timer = setInterval(() => { if (!ex.classList.contains("paused")) show((cur + 1) % PARTS.length); }, 6000);
+      }
+    }, { threshold: .4 }).observe(ex);
+    if (fine) { ex.addEventListener("pointerenter", () => ex.classList.add("paused")); ex.addEventListener("pointerleave", () => ex.classList.remove("paused")); }
+  }
+
+  /* Braukimas (telefone ir pele) + bakstelėjimas atidaro per visą ekraną */
+  let sw = null;
+  shot.addEventListener("pointerdown", e => { if (e.target.closest(".expand")) return; sw = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false }; });
+  shot.addEventListener("pointermove", e => {
+    if (sw && sw.id === e.pointerId) {
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (!sw.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { sw.moved = true; shot.classList.add("drag"); shot.classList.remove("lensing"); try { shot.setPointerCapture(e.pointerId); } catch (_) {} }
+      if (sw.moved) imgs[cur].style.setProperty("--dx", dx * .5 + "px");
+    }
+    if (fine && !(sw && sw.moved)) lensAt(e);
+  });
+  function end(e){
+    if (!sw || sw.id !== e.pointerId) return;
+    const dx = e.clientX - sw.x, moved = sw.moved; sw = null;
+    shot.classList.remove("drag"); imgs.forEach(im => im.style.removeProperty("--dx"));
+    if (moved) { if (Math.abs(dx) > 50) { stopAuto(); show((cur + (dx < 0 ? 1 : -1) + PARTS.length) % PARTS.length); } }
+    else if (e.type === "pointerup") Viewer.open(PARTS.map(p => p.k), PARTS[cur].k);
+  }
+  shot.addEventListener("pointerup", end); shot.addEventListener("pointercancel", end);
+  document.getElementById("expand").addEventListener("click", e => { e.stopPropagation(); Viewer.open(PARTS.map(p => p.k), PARTS[cur].k); });
+
+  /* Lupa – tik su pele */
+  const Z = 2.4, R = 125;
+  function lensAt(e){
+    const r = shot.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, d = shown();
+    const ix = x - d.ox, iy = y - d.oy;
+    if (ix < 0 || iy < 0 || ix > d.dw || iy > d.dh) { shot.classList.remove("lensing"); return; }
+    shot.classList.add("lensing");
+    lens.style.left = (x - R) + "px"; lens.style.top = (y - R) + "px";
+    lens.style.backgroundImage = `url(${imgs[cur].src})`;
+    lens.style.backgroundSize = `${d.dw * Z}px ${d.dh * Z}px`;
+    lens.style.backgroundPosition = `${-(ix * Z - R)}px ${-(iy * Z - R)}px`;
+  }
+  shot.addEventListener("pointerleave", () => shot.classList.remove("lensing"));
+})();
+
+/* ---------- Hero: langas išsilygina slenkant, su pele – lengvas paralaksas ---------- */
+(function(){
+  if (reduce) return;
+  const combo = document.getElementById("combo"), fr = combo.querySelector(".frame"), ph = combo.querySelector(".phone");
+  let mx = 0, my = 0;
+  function apply(){
+    const p = clamp(scrollY / 420, 0, 1), k = 1 - p;
+    fr.style.transform = `translate3d(${mx * 12}px, ${my * 8}px, 0) rotateY(${(-9 + mx * 7) * k}deg) rotateX(${(3 - my * 5) * k}deg)`;
+    ph.style.transform = `translate3d(${mx * -22 - p * 30}px, ${my * -16 + p * 24}px, 0) rotate(${-4 * k}deg)`;
+  }
+  if (fine) combo.closest(".hero").addEventListener("pointermove", e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; apply(); });
+  let rq = 0; addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; apply(); }); }, { passive: true });
+  apply();
+})();
+
+/* ---------- Telefonai išsiskleidžia slenkant ---------- */
+(function(){
+  const fan = document.getElementById("fan"), ps = [...fan.querySelectorAll(".phone")];
+  function upd(){
+    const r = fan.getBoundingClientRect();
+    const p = reduce ? 1 : clamp((innerHeight - r.top) / (innerHeight * .9), 0, 1);
+    const e = 1 - Math.pow(1 - p, 3), dx = Math.min(fan.clientWidth * .3, 200) * e;
+    ps[0].style.transform = `translateX(${-dx}px) rotate(${-8 * e}deg) translateY(${30 * e}px)`;
+    ps[1].style.transform = `translateY(${-10 * e}px)`;
+    ps[2].style.transform = `translateX(${dx}px) rotate(${8 * e}deg) translateY(${30 * e}px)`;
+  }
+  let rq = 0; addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; upd(); }); }, { passive: true });
+  addEventListener("resize", upd); upd();
+})();
+
+/* ---------- Kortelių šviesa, magnetiniai mygtukai (tik su pele) ---------- */
+document.querySelectorAll(".card").forEach(c => c.addEventListener("pointermove", e => {
+  const r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px");
+}));
+if (fine && !reduce) document.querySelectorAll(".mag").forEach(b => {
+  b.addEventListener("pointermove", e => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .22}px, ${(e.clientY - r.top - r.height / 2) * .35}px)`; });
+  b.addEventListener("pointerleave", () => b.style.transform = "");
+});
+
+/* ---------- 2. PCB drobė ---------- */
+(function(){
+  const cv = document.getElementById("pcb"), ctx = cv.getContext("2d");
+  let W, H, dpr, G, traces = [], pulses = [], stat, hot, mouse = {x:-999, y:-999, on:false}, running = false, last = 0, spawnAcc = 0;
+  const DIRS = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+
+  function build(){
+    dpr = Math.min(2, devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr;
+    G = W < 600 ? 22 : 28;
+    const cols = Math.ceil(W / G) + 1, rows = Math.ceil(H / G) + 1;
+    const occ = new Set(), key = (c, r) => c + "," + r;
+    traces = [];
+    const target = Math.round(cols * rows / 26);
+    let tries = 0;
+    while (traces.length < target && tries++ < target * 12) {
+      let c = (Math.random() * cols) | 0, r = (Math.random() * rows) | 0;
+      if (occ.has(key(c, r))) continue;
+      let d = ((Math.random() * 4) | 0) * 2; // pradžia – tiesiai
+      const cells = [[c, r]], pts = [[c, r]];
+      const len = (rnd(6, 34)) | 0;
+      for (let s = 0; s < len; s++) {
+        if (Math.random() < .16) { const nd = (d + (Math.random() < .5 ? 1 : 7)) % 8; d = nd; pts.push([c, r]); }
+        const nc = c + DIRS[d][0], nr = r + DIRS[d][1];
+        if (nc < 0 || nr < 0 || nc >= cols || nr >= rows || occ.has(key(nc, nr))) break;
+        c = nc; r = nr; cells.push([c, r]);
+      }
+      if (cells.length < 5) continue;
+      pts.push([c, r]);
+      cells.forEach(([a, b]) => occ.add(key(a, b)));
+      // suvienodinti taškus ir ilgius
+      const P = []; let L = 0; const acc = [0];
+      pts.forEach(([a, b], i) => {
+        const p = [a * G, b * G];
+        if (P.length && P[P.length-1][0] === p[0] && P[P.length-1][1] === p[1]) return;
+        if (P.length) { L += Math.hypot(p[0] - P[P.length-1][0], p[1] - P[P.length-1][1]); acc.push(L); }
+        P.push(p);
+      });
+      if (P.length < 2) continue;
+      const via = Math.random() < .35;
+      const cx = P.reduce((s, p) => s + p[0], 0) / P.length, cy = P.reduce((s, p) => s + p[1], 0) / P.length;
+      traces.push({P, acc, L, via, cx, cy});
+    }
+    stat = render("rgba(212,135,74,.20)", "rgba(212,135,74,.32)", 1.6);
+    hot  = render("rgba(255,207,150,.85)", "rgba(255,207,150,1)", 2.2);
+    draw(0);
+  }
+
+  function render(line, pad, w){
+    const o = document.createElement("canvas"); o.width = cv.width; o.height = cv.height;
+    const c = o.getContext("2d"); c.scale(dpr, dpr);
+    c.strokeStyle = line; c.lineWidth = w; c.lineCap = "round"; c.lineJoin = "round";
+    for (const t of traces) {
+      c.beginPath(); c.moveTo(t.P[0][0], t.P[0][1]);
+      for (let i = 1; i < t.P.length; i++) c.lineTo(t.P[i][0], t.P[i][1]);
+      c.stroke();
+      for (const p of [t.P[0], t.P[t.P.length-1]]) {
+        c.fillStyle = pad; c.beginPath(); c.arc(p[0], p[1], 3.6, 0, 7); c.fill();
+        c.fillStyle = "#0a0b0d"; c.beginPath(); c.arc(p[0], p[1], 1.4, 0, 7); c.fill();
+      }
+      if (t.via) { const m = t.P[(t.P.length / 2) | 0]; c.strokeStyle = pad; c.beginPath(); c.arc(m[0], m[1], 5, 0, 7); c.stroke(); c.strokeStyle = line; }
+    }
+    return o;
+  }
+
+  function at(t, d){
+    let i = 1; while (i < t.acc.length && t.acc[i] < d) i++;
+    if (i >= t.P.length) return t.P[t.P.length-1];
+    const a = t.P[i-1], b = t.P[i], k = (d - t.acc[i-1]) / (t.acc[i] - t.acc[i-1] || 1);
+    return [a[0] + (b[0]-a[0]) * k, a[1] + (b[1]-a[1]) * k];
+  }
+  function spawn(t, rev){ if (pulses.length < 140) pulses.push({t, d:0, v:rnd(140, 320), rev: !!rev, tail:rnd(26, 60)}); }
+  function nearest(x, y, n){
+    return traces.map(t => [t, Math.hypot(t.cx - x, t.cy - y)]).sort((a, b) => a[1] - b[1]).slice(0, n).map(a => a[0]);
+  }
+
+  function draw(dt){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(stat, 0, 0);
+    if (mouse.on) {
+      for (const [R, a] of [[180, .25], [110, .45], [55, .8]]) {
+        ctx.save(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(mouse.x * dpr, mouse.y * dpr, R * dpr, 0, 7); ctx.clip(); ctx.drawImage(hot, 0, 0); ctx.restore();
+      }
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.lineCap = "round";
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i]; p.d += p.v * dt;
+      if (p.d - p.tail > p.t.L) { pulses.splice(i, 1); continue; }
+      const head = Math.min(p.d, p.t.L), tailD = Math.max(0, p.d - p.tail);
+      const map = d => at(p.t, p.rev ? p.t.L - d : d);
+      ctx.strokeStyle = "rgba(255,207,150,.55)"; ctx.lineWidth = 2.4;
+      ctx.beginPath(); const s = map(tailD); ctx.moveTo(s[0], s[1]);
+      for (let d = tailD + 6; d < head; d += 6) { const q = map(d); ctx.lineTo(q[0], q[1]); }
+      const h = map(head); ctx.lineTo(h[0], h[1]); ctx.stroke();
+      if (p.d <= p.t.L) { ctx.fillStyle = "#fff4e0"; ctx.shadowColor = "#ffcf96"; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(h[0], h[1], 2.6, 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+    }
+  }
+
+  function loop(ts){
+    if (!running) return;
+    const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts;
+    spawnAcc += dt;
+    while (spawnAcc > .09) { spawnAcc -= .09; spawn(traces[(Math.random() * traces.length) | 0], Math.random() < .5); }
+    if (mouse.on && Math.random() < .25) { const n = nearest(mouse.x, mouse.y, 4); spawn(n[(Math.random() * n.length) | 0], Math.random() < .5); }
+    draw(dt);
+    requestAnimationFrame(loop);
+  }
+
+  const hero = cv.parentElement;
+  hero.addEventListener("pointermove", e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.on = true; if (reduce) draw(0); });
+  hero.addEventListener("pointerleave", () => { mouse.on = false; if (reduce) draw(0); });
+  hero.addEventListener("pointerdown", e => {
+    if (e.target.closest("a,button")) return;
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    nearest(x, y, 14).forEach(t => { spawn(t, false); spawn(t, true); });
+  });
+
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(build, 200); });
+  build();
+  if (!reduce) {
+    new IntersectionObserver(es => { const v = es[0].isIntersecting; if (v && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); } else if (!v) running = false; }).observe(cv);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) running = false; else if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); } });
+  }
+})();
+
+
+</script>
+</body>
+</html>

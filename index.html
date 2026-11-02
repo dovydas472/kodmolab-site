@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kodmo Lab</title>
+<meta name="description" content="Kodmo Lab – Lietuvos programinės įrangos studija. Kuriame programas smulkiam verslui.">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kodmo Lab">
+<meta property="og:description" content="Kodmo Lab – Lietuvos programinės įrangos studija. Kuriame programas smulkiam verslui.">
+<meta property="og:url" content="https://kodmolab.lt/">
+<meta property="og:image" content="https://kodmolab.lt/og.jpg">
+<meta property="og:locale" content="lt_LT">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://kodmolab.lt/">
+<style>
+/* Layout: spausdintinė plokštė naktį. Hero = gyva PCB drobė + į pelę reaguojanti antraštė;
+   per visą puslapį kairėje eina takelis, kuris piešiasi slenkant ir jungia skyrius;
+   Servo – „istorija slenkant“ (langas prilipęs, žingsniai keičia jo būseną); principai; planai; kontaktai. */
+:root{
+  --void:#0a0b0d; --board:#111419; --edge:#232830;
+  --copper:#d4874a; --copper-hot:#ffcf96; --servo:#f2a33a; --paid:#5fbf8a;
+  --ink:#eef0f2; --dim:#868d97;
+  --display:"Anybody","Arial Black",Impact,sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--void);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.6;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--copper-hot);outline-offset:3px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(20px,env(safe-area-inset-left,0px))}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--copper)}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:.92;text-wrap:balance;font-stretch:125%}
+
+/* NAV */
+nav{position:absolute;top:0;left:0;right:0;z-index:5}
+nav .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:22px;padding-bottom:22px}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.logo svg{width:38px;height:38px}
+.logo b{font-family:var(--display);font-stretch:150%;font-weight:900;font-size:19px;letter-spacing:.04em}
+.logo b span{color:var(--copper)}
+.nav-r{display:flex;gap:26px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.nav-r a{text-decoration:none;color:var(--dim)}
+.nav-r a:hover{color:var(--ink)}
+.nav-r a.nav-cta{color:#170d04;background:var(--copper);padding:9px 16px;border-radius:3px;font-weight:600}
+.nav-r a.nav-cta:hover{background:var(--copper-hot);color:#170d04}
+.nav-r{align-items:center}
+
+/* HERO */
+.hero{position:relative;min-height:max(640px,88vh);display:flex;align-items:flex-end;overflow:hidden;border-bottom:1px solid var(--edge)}
+#pcb{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(10,11,13,.9) 0%,rgba(10,11,13,.6) 40%,rgba(10,11,13,0) 75%),
+             linear-gradient(0deg,rgba(10,11,13,.9) 0%,rgba(10,11,13,0) 40%)}
+.hero-txt{position:relative;z-index:2;padding-bottom:80px;padding-top:140px;pointer-events:none}
+.hero-txt a{pointer-events:auto}
+.hero h1{font-size:clamp(44px,8.2vw,122px);font-weight:900;letter-spacing:-.01em;pointer-events:auto}
+.hero h1 .ln{display:block;white-space:nowrap}
+.hero h1 .ch{display:inline-block;font-variation-settings:"wght" 760,"wdth" 112;transition:font-variation-settings .25s ease-out,color .25s}
+.hero h1 .c{color:var(--copper)}
+.hero .lead{font-size:clamp(19px,1.9vw,23px);max-width:38ch;margin:28px 0 32px;color:#cfd3d9}
+.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:15px 22px;border-radius:3px;border:1px solid var(--edge);background:rgba(17,20,25,.7);color:var(--ink);cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .2s}
+.btn.cu{background:var(--copper);border-color:var(--copper);color:#170d04;font-weight:600}
+.btn:hover{border-color:var(--copper-hot)}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+
+/* STRIP */
+.strip{border-bottom:1px solid var(--edge);overflow:hidden;white-space:nowrap;padding:16px 0;background:var(--board)}
+.strip .track{display:inline-block;animation:slide 40s linear infinite;font-family:var(--display);font-stretch:150%;font-weight:800;font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:#3a414c}
+.strip .track span{margin:0 26px}
+.strip .track i{font-style:normal;color:var(--copper)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* MAIN + SPINE */
+main{position:relative}
+.spine-box{position:absolute;inset:0;pointer-events:none;z-index:0}
+.spine-box .wrap{position:relative;height:100%}
+#spine{position:absolute;left:max(20px,env(safe-area-inset-left,0px));top:0;width:40px;height:100%;overflow:visible}
+section{position:relative;z-index:1;padding:110px 0;border-bottom:1px solid var(--edge)}
+.head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:48px}
+.head h2{font-size:clamp(40px,6vw,82px);font-weight:900}
+.head p{color:var(--dim);max-width:40ch}
+.node-anchor{display:block;height:0}
+@media (min-width:1000px){ main .wrap.in{padding-left:92px} }
+@media (max-width:999px){ .spine-box{display:none} }
+
+/* SERVO STORY */
+.chip{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:20px;border:1px solid var(--edge);color:var(--dim);white-space:nowrap}
+.chip.live{color:var(--servo);border-color:rgba(242,163,58,.4)}
+.chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--servo);margin-right:8px;vertical-align:1px;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{50%{opacity:.25}}
+.servo-h{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:24px;max-width:780px}
+@media (max-width:520px){.servo-h .chip{white-space:normal}}
+.servo-h h2{font-size:clamp(40px,7vw,104px);font-weight:900;color:var(--servo);min-width:0}
+@media (max-width:520px){.servo-h h2{font-stretch:100%}}
+.servo-h p{font-size:20px;color:#c9cdd3;max-width:46ch}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.story{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+.story>*{min-width:0}
+.steps{display:grid}
+.step{min-height:56vh;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:20px 0;opacity:.32;transition:opacity .4s}
+.step.on{opacity:1}
+.step .k{font-family:var(--mono);font-size:13px;color:var(--servo);letter-spacing:.12em}
+.step h3{font-size:clamp(32px,3.4vw,46px);font-weight:800}
+.step p{color:#bfc4cb;max-width:40ch}
+.stage{position:sticky;top:12vh;height:min(560px,76vh);display:grid;place-items:center}
+.dots{position:absolute;top:0;left:0;right:0;display:flex;gap:8px}
+.dots i{flex:1;height:3px;background:var(--edge);border-radius:2px;overflow:hidden;position:relative}
+.dots i b{position:absolute;inset:0;background:var(--servo);transform:scaleX(0);transform-origin:left;transition:transform .12s linear}
+
+.win{width:100%;max-width:520px;background:#1d2128;border:1px solid #2c323b;border-radius:8px;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(242,163,58,.05);overflow:hidden;font-size:14px;
+  transform:perspective(1100px) rotateY(var(--ry,-6deg)) rotateX(var(--rx,3deg));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.tb{display:flex;justify-content:space-between;align-items:center;background:#252a32;padding:9px 14px;font-size:13px;color:#dfe2e7}
+.tb .ctl{font-family:var(--mono);color:#868d97;letter-spacing:.6em;font-size:11px}
+.scenes{position:relative;height:340px}
+.scene{position:absolute;inset:0;padding:18px;display:grid;gap:12px;align-content:start;opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s;pointer-events:none}
+.scene.on{opacity:1;transform:none;pointer-events:auto}
+.scene .stg>*{transition:opacity .4s,transform .4s}
+.scene:not(.on) .stg>*{opacity:0;transform:translateX(-8px)}
+.scene.on .stg>*:nth-child(2){transition-delay:.12s}.scene.on .stg>*:nth-child(3){transition-delay:.24s}
+.scene.on .stg>*:nth-child(4){transition-delay:.36s}.scene.on .stg>*:nth-child(5){transition-delay:.48s}
+.fld{display:grid;gap:4px}
+.fld label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#868d97}
+.inp{background:#12151a;border:1px solid #2c323b;border-radius:4px;padding:8px 10px;min-height:38px;font-family:var(--mono);color:#dfe2e7}
+.inp.f{border-color:rgba(242,163,58,.5);background:#1a1712}
+.inp.big{font-size:22px;font-weight:600;letter-spacing:.08em}
+.caret::after{content:"";display:inline-block;width:2px;height:1em;background:var(--servo);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.li{display:grid;grid-template-columns:22px 1fr auto auto;gap:10px;align-items:center;background:#12151a;border-radius:4px;padding:8px 10px;font-variant-numeric:tabular-nums}
+.li .ok{color:var(--paid);font-weight:700}
+.li .q{color:#868d97;font-family:var(--mono);font-size:12px}
+.tag{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px;background:rgba(242,163,58,.14);color:var(--servo);white-space:nowrap}
+.pill{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:3px;white-space:nowrap}
+.p-acc{background:rgba(233,197,72,.15);color:#e9c548}.p-run{background:rgba(91,141,239,.17);color:#8fb0f5}.p-done{background:rgba(95,191,138,.16);color:var(--paid)}
+.flowst{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flowst .arr{color:#4a515c}
+.note{background:#12151a;border-left:3px solid var(--servo);border-radius:3px;padding:9px 11px}
+.note small{display:block;font-family:var(--mono);font-size:11px;color:#868d97}
+.plate{font-weight:600;font-size:18px;color:#111;background:#f4f4f0;padding:1px 10px 1px 28px;border-radius:3px;border:2px solid #111;position:relative;letter-spacing:.06em;font-family:var(--mono)}
+.plate::before{content:"LT";position:absolute;left:0;top:0;bottom:0;width:20px;background:#1d4fb8;color:#ffd23f;font-size:8px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px}
+.inv{background:#f3efe4;color:#222;border-radius:4px;padding:16px;position:relative;font-size:13px}
+.inv h4{margin:0;font-size:14px;letter-spacing:.04em}
+.inv .sn{font-family:var(--mono);font-size:12px;color:#666;margin-bottom:8px}
+.inv .r{display:flex;justify-content:space-between;border-bottom:1px solid #d8d2c2;padding:4px 0;font-variant-numeric:tabular-nums}
+.inv .t{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.inv .t b{font-size:22px}
+.stamp{position:absolute;right:14px;top:12px;font-family:var(--display);font-stretch:110%;font-weight:900;font-size:22px;color:var(--paid);border:3px solid var(--paid);padding:0 8px;letter-spacing:.05em;transform:rotate(-10deg) scale(2);opacity:0;transition:transform .35s .6s cubic-bezier(.3,1.6,.5,1),opacity .2s .6s;background:rgba(243,239,228,.85)}
+.scene.on .stamp{transform:rotate(-10deg) scale(1);opacity:1}
+.more-link{display:inline-flex;gap:10px;align-items:center;margin-top:28px;font-family:var(--mono);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--servo);text-decoration:none;border:1px solid rgba(242,163,58,.45);padding:14px 20px;border-radius:3px;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.more-link:hover{border-color:var(--servo)}
+
+/* PRINCIPLES */
+.rules{border-top:1px solid var(--edge)}
+.rule{display:grid;grid-template-columns:110px 1fr 1.1fr;gap:28px;align-items:baseline;padding:34px 0;border-bottom:1px solid var(--edge);position:relative}
+.rule::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(212,135,74,.10),transparent);transition:width .5s cubic-bezier(.2,.8,.2,1);z-index:-1}
+.rule:hover::before{width:100%}
+.rule .n{font-family:var(--mono);color:var(--copper);font-size:14px;letter-spacing:.1em;display:flex;align-items:center;gap:10px}
+.rule .n::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid #4a515c;transition:all .3s}
+.rule:hover .n::before{background:var(--copper-hot);border-color:var(--copper-hot);box-shadow:0 0 12px var(--copper)}
+.rule h3{font-size:clamp(30px,3.6vw,48px);font-weight:800}
+.rule p{color:var(--dim)}
+
+/* ROADMAP */
+.road{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding-top:40px}
+.road::before{content:"";position:absolute;left:0;right:0;top:12px;height:2px;background:repeating-linear-gradient(90deg,var(--edge) 0 10px,transparent 10px 18px)}
+.road .done-line{position:absolute;left:0;top:12px;height:2px;width:16%;background:var(--copper);box-shadow:0 0 12px var(--copper)}
+.stop{position:relative;display:grid;gap:8px;align-content:start}
+.stop::before{content:"";position:absolute;top:-34px;left:0;width:12px;height:12px;border-radius:50%;background:var(--void);border:2px solid #4a515c}
+.stop.now::before{border-color:var(--copper);background:var(--copper);animation:ping 2s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(212,135,74,.5)}100%{box-shadow:0 0 0 16px rgba(212,135,74,0)}}
+.stop .when{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.stop.now .when{color:var(--copper-hot)}
+.stop h3{font-size:28px;font-weight:800;font-stretch:115%}
+.stop p{color:var(--dim);font-size:17px}
+
+/* CONTACT */
+.contact{padding:120px 0 90px}
+.mail{display:block;font-family:var(--display);font-stretch:140%;font-weight:900;font-size:clamp(34px,7.4vw,108px);line-height:1;text-decoration:none;margin:18px 0 24px;
+  background:linear-gradient(90deg,var(--ink) 0%,var(--ink) 40%,var(--copper-hot) 50%,var(--ink) 60%,var(--ink) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite;overflow-wrap:anywhere}
+@keyframes shine{from{background-position:100% 0}to{background-position:-150% 0}}
+.contact p{color:var(--dim);max-width:46ch}
+.copy{margin-top:22px}
+footer{border-top:1px solid var(--edge);padding:30px 0;color:var(--dim);font-size:14px;position:relative;z-index:1}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (max-width:960px){
+  .rule{grid-template-columns:1fr;gap:8px}
+  .road{grid-template-columns:1fr;row-gap:56px}
+  .road::before,.road .done-line{display:none}
+  .nav-r a:not(.nav-cta){display:none}
+  .hero::after{background:linear-gradient(0deg,rgba(10,11,13,.97) 0%,rgba(10,11,13,.9) 60%,rgba(10,11,13,.55) 100%)}
+  .story{grid-template-columns:1fr;gap:0}
+  .stage{position:relative;top:auto;height:auto;order:-1;padding-top:16px;margin-bottom:22px;display:block}
+  .scenes{height:300px}
+  .win{transform:none;font-size:13px;max-width:none}
+  .step{min-height:0;justify-content:flex-start;gap:6px;padding:14px 0 14px 16px;border-left:2px solid var(--edge);cursor:pointer;opacity:.5}
+  .step.on{border-left-color:var(--servo);opacity:1}
+  .step h3{font-size:24px}
+  .step:not(.on) p,.step:not(.on) .more-link{display:none}
+}
+@media (max-width:520px){
+  body{font-size:17px}
+  .logo b{font-size:15px}
+  .logo svg{width:32px;height:32px}
+  .nav-r a.nav-cta{padding:8px 12px}
+  .g2{grid-template-columns:1fr}
+  .hero h1 .ln{white-space:normal}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .mail{color:var(--ink);background:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#" aria-label="Kodmo Lab">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#111419" stroke="#d4874a" stroke-width="2"/><path d="M13 9v22M13 21l12-12M17 17l9 14" stroke="#d4874a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="25" cy="9" r="2.6" fill="#ffcf96"/><circle cx="26" cy="31" r="2.6" fill="#ffcf96"/><circle cx="13" cy="31" r="2.6" fill="#ffcf96"/></svg>
+      <b>KODMO<span>/</span>LAB</b>
+    </a>
+    <div class="nav-r">
+      <a href="#servo">Kodmo Auto</a>
+      <a href="#principai">Principai</a>
+      <a class="nav-cta" href="mailto:info@kodmolab.lt?subject=U%C5%BEklausa%20i%C5%A1%20kodmolab.lt">Susisiekti</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <canvas id="pcb" aria-hidden="true"></canvas>
+  <div class="wrap hero-txt">
+    <div class="eyebrow">Programinės įrangos studija · Lietuva</div>
+    <h1 id="h1" aria-label="Programos, sukurtos iš praktikos." style="margin-top:14px"><span class="ln">Programos,</span><span class="ln">sukurtos iš</span><span class="ln c">praktikos.</span></h1>
+    <p class="lead">Kuriame programinę įrangą smulkiam verslui: paprastą naudoti, patikimą ir veikiančią net be interneto.</p>
+    <div class="btns">
+      <a class="btn cu mag" href="#servo">Mūsų produktas</a>
+      <a class="btn mag" href="mailto:info@kodmolab.lt?subject=U%C5%BEklausa%20i%C5%A1%20kodmolab.lt">Susisiekti</a>
+    </div>
+  </div>
+</header>
+
+<div class="strip" aria-hidden="true">
+  <div class="track">
+    <span>Programinė įranga</span><i>◆</i><span>Veikia be interneto</span><i>◆</i><span>Duomenys lieka pas jus</span><i>◆</i><span>Tiesioginis ryšys su kūrėjais</span><i>◆</i><span>Sukurta Lietuvoje</span><i>◆</i>
+    <span>Programinė įranga</span><i>◆</i><span>Veikia be interneto</span><i>◆</i><span>Duomenys lieka pas jus</span><i>◆</i><span>Tiesioginis ryšys su kūrėjais</span><i>◆</i><span>Sukurta Lietuvoje</span><i>◆</i>
+  </div>
+</div>
+
+<main id="main">
+  <div class="spine-box" aria-hidden="true"><div class="wrap"><svg id="spine"></svg></div></div>
+
+  <section id="servo">
+    <div class="wrap in">
+      <div class="servo-h" data-node>
+        <div class="chips"><span class="chip">Autoserviso valdymo programa · Windows</span><span class="chip live">Testavimo etapas</span></div>
+        <h2>Kodmo Auto</h2>
+        <p>Darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai vienoje sistemoje. Štai kaip automobilis keliauja per programą.</p>
+      </div>
+
+      <div class="story">
+        <div class="steps">
+          <div class="step on" data-i="0"><span class="k">01 / 05</span><h3>Valstybinis numeris</h3><p>Darbas pradedamas nuo numerio. Paieška prasideda automatiškai, vos įvedus kelis simbolius.</p></div>
+          <div class="step" data-i="1"><span class="k">02 / 05</span><h3>Klientas jau žinomas</h3><p>Jei klientas lankėsi anksčiau, programa pati užpildo jo kontaktus ir automobilio duomenis: markę, modelį, VIN, VTA datą.</p></div>
+          <div class="step" data-i="2"><span class="k">03 / 05</span><h3>Darbai ir dalys</h3><p>Darbai pasirenkami iš katalogo, dalys iš sandėlio. Priskirtos dalys rezervuojamos ir kitam darbui nebesiūlomos.</p></div>
+          <div class="step" data-i="3"><span class="k">04 / 05</span><h3>Remontas</h3><p>Mechanikas keičia darbo būseną ir rašo pastabas, taip pat ir telefonu. Įrašai saugomi su laiku ir autoriumi.</p></div>
+          <div class="step" data-i="4"><span class="k">05 / 05</span><h3>Sąskaita ir apmokėjimas</h3><p>Sąskaita sukuriama iš atlikto darbo: PVM, serija ir numeris parenkami automatiškai. Apmokėjimas gali būti ir dalinis.</p>
+            <div><a class="more-link mag" id="servoLink" href="#">Daugiau apie Kodmo Auto <span aria-hidden="true">→</span></a></div></div>
+        </div>
+
+        <div class="stage">
+          <div class="dots" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+          <div class="win" id="win" aria-label="Kodmo Auto programos lango iliustracija">
+            <div class="tb"><span id="wtitle">➕ Naujas darbas</span><span class="ctl">–☐✕</span></div>
+            <div class="scenes">
+              <div class="scene on" data-s="0"><div class="stg" style="display:grid;gap:12px">
+                <div class="fld"><label>Valstybinis numeris</label><div class="inp big f caret" id="typed">PVZ 001</div></div>
+                <div class="g2"><div class="fld"><label>Klientas</label><div class="inp"></div></div><div class="fld"><label>Telefonas</label><div class="inp"></div></div></div>
+                <div class="g2"><div class="fld"><label>Markė / modelis</label><div class="inp"></div></div><div class="fld"><label>VTA iki</label><div class="inp"></div></div></div>
+              </div></div>
+              <div class="scene" data-s="1"><div class="stg" style="display:grid;gap:12px">
+                <div class="fld"><label>Valstybinis numeris</label><div class="inp big f">PVZ 001</div></div>
+                <div class="g2"><div class="fld"><label>Klientas</label><div class="inp f">Vardenis Pavardenis</div></div><div class="fld"><label>Telefonas</label><div class="inp f">+370 000 00001</div></div></div>
+                <div class="g2"><div class="fld"><label>Markė / modelis</label><div class="inp f">Škoda Octavia, 2012</div></div><div class="fld"><label>VTA iki</label><div class="inp f">2027-03-18</div></div></div>
+                <div class="fld"><label>VIN</label><div class="inp f">TMB00000000000001</div></div>
+              </div></div>
+              <div class="scene" data-s="2"><div class="stg" style="display:grid;gap:8px">
+                <div class="li"><span class="ok">✓</span><span>Alyva 5W-30</span><span class="q">4,5 l</span><span class="tag">rezervuota</span></div>
+                <div class="li"><span class="ok">✓</span><span>Alyvos filtras</span><span class="q">1 vnt.</span><span class="tag">rezervuota</span></div>
+                <div class="li"><span class="ok">✓</span><span>Stabdžių kaladėlės</span><span class="q">1 kompl.</span><span class="tag">rezervuota</span></div>
+                <div class="li"><span class="ok">✓</span><span>Tepalų keitimas</span><span class="q">0,5 val.</span><span class="q">katalogas</span></div>
+                <div class="li"><span class="ok">✓</span><span>Kaladėlių keitimas</span><span class="q">0,7 val.</span><span class="q">katalogas</span></div>
+              </div></div>
+              <div class="scene" data-s="3"><div class="stg" style="display:grid;gap:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="plate">PVZ 001</span><span class="mono" style="font-size:12px;color:#868d97">Mechanikas: Tomas</span></div>
+                <div class="flowst"><span class="pill p-acc">🟡 Priimtas</span><span class="arr">→</span><span class="pill p-run">🔵 Vykdomas</span><span class="arr">→</span><span class="pill p-done">🟢 Atliktas</span></div>
+                <div class="note"><small>10-14 11:20 · Tomas</small>Pakeistos galinės kaladėlės, diskai tvarkingi.</div>
+                <div class="note"><small>10-14 10:42 · Tomas</small>Galinės kaladėlės likę ~3 mm, keičiam.</div>
+              </div></div>
+              <div class="scene" data-s="4"><div class="stg" style="display:grid;gap:10px">
+                <div class="inv">
+                  <h4>PVM SĄSKAITA FAKTŪRA</h4><div class="sn">ASP 2026-014 · PVZ 001</div>
+                  <div class="r"><span>Alyva 5W-30, 4,5 l</span><span>40,50 €</span></div>
+                  <div class="r"><span>Alyvos filtras</span><span>9,90 €</span></div>
+                  <div class="r"><span>Stabdžių kaladėlės</span><span>34,00 €</span></div>
+                  <div class="r"><span>Darbas, 1,2 val.</span><span>39,05 €</span></div>
+                  <div class="r"><span>PVM 21 %</span><span>25,92 €</span></div>
+                  <div class="t"><span>Iš viso</span><b>149,37 €</b></div>
+                  <div class="stamp">APMOKĖTA</div>
+                </div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="principai">
+    <div class="wrap in">
+      <div class="head" data-node><h2>Principai</h2></div>
+      <div class="rules">
+        <div class="rule"><span class="n">01</span><h3>Sprendimai iš praktikos</h3><p>Produktus kuriame remdamiesi realia darbo patirtimi ir glaudžiai bendradarbiaudami su jų naudotojais.</p></div>
+        <div class="rule"><span class="n">02</span><h3>Duomenų saugumas</h3><p>Mūsų programos veikia jūsų kompiuteryje. Duomenys saugomi tik pas jus, mes prie jų neturime prieigos.</p></div>
+        <div class="rule"><span class="n">03</span><h3>Tiesioginis ryšys</h3><p>Į klausimus atsako patys kūrėjai, be tarpininkų.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="planai">
+    <div class="wrap in">
+      <div class="head" data-node><h2>Planai</h2><p>Tikslias datas skelbsime, kai jos bus patvirtintos.</p></div>
+      <div class="road">
+        <div class="done-line"></div>
+        <div class="stop now"><span class="when">Dabar</span><h3>Kodmo Auto testavimas</h3><p>Programa testuojama veikiančiuose autoservisuose. Testavime dalyvaujantiems servisams bus taikoma nuolaida.</p></div>
+        <div class="stop"><span class="when">Po testavimo</span><h3>Kodmo Auto komercinė versija</h3><p>Kainų paskelbimas ir diegimas naujiems klientams.</p></div>
+        <div class="stop"><span class="when">Ateityje</span><h3>Nauji produktai</h3><p>Dar dvi programos yra planavimo etape.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="kontaktai">
+    <div class="wrap in">
+      <div data-node><div class="eyebrow">Kontaktai</div></div>
+      <a class="mail" href="mailto:info@kodmolab.lt?subject=U%C5%BEklausa%20i%C5%A1%20kodmolab.lt">info@kodmolab.lt</a>
+      <p>Dėl Kodmo Auto testavimo, bendradarbiavimo ar kitais klausimais rašykite el. paštu.</p>
+      <a class="btn cu copy mag" href="mailto:info@kodmolab.lt?subject=U%C5%BEklausa%20i%C5%A1%20kodmolab.lt">Susisiekti <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Kodmo Lab · Lietuva</span>
+    <!-- Rekvizitai: įrašyti po IV registracijos -->
+    <span class="mono">kodmolab.lt</span>
+  </div>
+</footer>
+
+<script>
+/* Servo puslapio adresas. Svetainėje: "/servo/". Prototipe – bandomasis puslapis. */
+const SERVO_URL = "/auto/";
+document.getElementById("servoLink").href = SERVO_URL;
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fine = matchMedia("(pointer: fine)").matches;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- 1. Antraštė: raidės + dekodavimas + reakcija į pelę ---------- */
+(function(){
+  const h = document.getElementById("h1");
+  const chars = [];
+  h.querySelectorAll(".ln").forEach(ln => {
+    const txt = ln.textContent; ln.textContent = "";
+    for (const c of txt) {
+      if (c === " ") { ln.appendChild(document.createTextNode(" ")); continue; }
+      const s = document.createElement("span"); s.className = "ch"; s.textContent = c; s.dataset.c = c; s.setAttribute("aria-hidden", "true");
+      ln.appendChild(s); chars.push(s);
+    }
+  });
+  if (reduce) return;
+  const glyphs = "01<>/\\#_*+=KODMLAB";
+  let f = 0;
+  const t = setInterval(() => {
+    f++;
+    chars.forEach((s, i) => { s.textContent = f >= 6 + i * 1.2 ? s.dataset.c : glyphs[(Math.random() * glyphs.length) | 0]; });
+    if (f > 6 + chars.length * 1.2) { clearInterval(t); chars.forEach(s => s.textContent = s.dataset.c); }
+  }, 40);
+
+  if (!fine) return;
+  let mx = -9999, my = -9999, raf = 0;
+  const hero = h.closest(".hero");
+  function upd(){
+    raf = 0;
+    for (const s of chars) {
+      const r = s.getBoundingClientRect();
+      const d = Math.hypot(r.left + r.width / 2 - mx, r.top + r.height / 2 - my);
+      const k = clamp(1 - d / 260, 0, 1);
+      s.style.fontVariationSettings = `"wght" ${Math.round(760 + 140 * k)}, "wdth" ${Math.round(112 + 38 * k)}`;
+      s.style.color = k > .55 ? "var(--copper-hot)" : "";
+    }
+  }
+  hero.addEventListener("pointermove", e => { mx = e.clientX; my = e.clientY; if (!raf) raf = requestAnimationFrame(upd); });
+  hero.addEventListener("pointerleave", () => { mx = my = -9999; if (!raf) raf = requestAnimationFrame(upd); });
+})();
+
+/* ---------- 2. PCB drobė ---------- */
+(function(){
+  const cv = document.getElementById("pcb"), ctx = cv.getContext("2d");
+  let W, H, dpr, G, traces = [], pulses = [], stat, hot, mouse = {x:-999, y:-999, on:false}, running = false, last = 0, spawnAcc = 0;
+  const DIRS = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+
+  function build(){
+    dpr = Math.min(2, devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr;
+    G = W < 600 ? 22 : 28;
+    const cols = Math.ceil(W / G) + 1, rows = Math.ceil(H / G) + 1;
+    const occ = new Set(), key = (c, r) => c + "," + r;
+    traces = [];
+    const target = Math.round(cols * rows / 26);
+    let tries = 0;
+    while (traces.length < target && tries++ < target * 12) {
+      let c = (Math.random() * cols) | 0, r = (Math.random() * rows) | 0;
+      if (occ.has(key(c, r))) continue;
+      let d = ((Math.random() * 4) | 0) * 2; // pradžia – tiesiai
+      const cells = [[c, r]], pts = [[c, r]];
+      const len = (rnd(6, 34)) | 0;
+      for (let s = 0; s < len; s++) {
+        if (Math.random() < .16) { const nd = (d + (Math.random() < .5 ? 1 : 7)) % 8; d = nd; pts.push([c, r]); }
+        const nc = c + DIRS[d][0], nr = r + DIRS[d][1];
+        if (nc < 0 || nr < 0 || nc >= cols || nr >= rows || occ.has(key(nc, nr))) break;
+        c = nc; r = nr; cells.push([c, r]);
+      }
+      if (cells.length < 5) continue;
+      pts.push([c, r]);
+      cells.forEach(([a, b]) => occ.add(key(a, b)));
+      // suvienodinti taškus ir ilgius
+      const P = []; let L = 0; const acc = [0];
+      pts.forEach(([a, b], i) => {
+        const p = [a * G, b * G];
+        if (P.length && P[P.length-1][0] === p[0] && P[P.length-1][1] === p[1]) return;
+        if (P.length) { L += Math.hypot(p[0] - P[P.length-1][0], p[1] - P[P.length-1][1]); acc.push(L); }
+        P.push(p);
+      });
+      if (P.length < 2) continue;
+      const via = Math.random() < .35;
+      const cx = P.reduce((s, p) => s + p[0], 0) / P.length, cy = P.reduce((s, p) => s + p[1], 0) / P.length;
+      traces.push({P, acc, L, via, cx, cy});
+    }
+    stat = render("rgba(212,135,74,.20)", "rgba(212,135,74,.32)", 1.6);
+    hot  = render("rgba(255,207,150,.85)", "rgba(255,207,150,1)", 2.2);
+    draw(0);
+  }
+
+  function render(line, pad, w){
+    const o = document.createElement("canvas"); o.width = cv.width; o.height = cv.height;
+    const c = o.getContext("2d"); c.scale(dpr, dpr);
+    c.strokeStyle = line; c.lineWidth = w; c.lineCap = "round"; c.lineJoin = "round";
+    for (const t of traces) {
+      c.beginPath(); c.moveTo(t.P[0][0], t.P[0][1]);
+      for (let i = 1; i < t.P.length; i++) c.lineTo(t.P[i][0], t.P[i][1]);
+      c.stroke();
+      for (const p of [t.P[0], t.P[t.P.length-1]]) {
+        c.fillStyle = pad; c.beginPath(); c.arc(p[0], p[1], 3.6, 0, 7); c.fill();
+        c.fillStyle = "#0a0b0d"; c.beginPath(); c.arc(p[0], p[1], 1.4, 0, 7); c.fill();
+      }
+      if (t.via) { const m = t.P[(t.P.length / 2) | 0]; c.strokeStyle = pad; c.beginPath(); c.arc(m[0], m[1], 5, 0, 7); c.stroke(); c.strokeStyle = line; }
+    }
+    return o;
+  }
+
+  function at(t, d){
+    let i = 1; while (i < t.acc.length && t.acc[i] < d) i++;
+    if (i >= t.P.length) return t.P[t.P.length-1];
+    const a = t.P[i-1], b = t.P[i], k = (d - t.acc[i-1]) / (t.acc[i] - t.acc[i-1] || 1);
+    return [a[0] + (b[0]-a[0]) * k, a[1] + (b[1]-a[1]) * k];
+  }
+  function spawn(t, rev){ if (pulses.length < 140) pulses.push({t, d:0, v:rnd(140, 320), rev: !!rev, tail:rnd(26, 60)}); }
+  function nearest(x, y, n){
+    return traces.map(t => [t, Math.hypot(t.cx - x, t.cy - y)]).sort((a, b) => a[1] - b[1]).slice(0, n).map(a => a[0]);
+  }
+
+  function draw(dt){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(stat, 0, 0);
+    if (mouse.on) {
+      for (const [R, a] of [[180, .25], [110, .45], [55, .8]]) {
+        ctx.save(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(mouse.x * dpr, mouse.y * dpr, R * dpr, 0, 7); ctx.clip(); ctx.drawImage(hot, 0, 0); ctx.restore();
+      }
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.lineCap = "round";
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i]; p.d += p.v * dt;
+      if (p.d - p.tail > p.t.L) { pulses.splice(i, 1); continue; }
+      const head = Math.min(p.d, p.t.L), tailD = Math.max(0, p.d - p.tail);
+      const map = d => at(p.t, p.rev ? p.t.L - d : d);
+      ctx.strokeStyle = "rgba(255,207,150,.55)"; ctx.lineWidth = 2.4;
+      ctx.beginPath(); const s = map(tailD); ctx.moveTo(s[0], s[1]);
+      for (let d = tailD + 6; d < head; d += 6) { const q = map(d); ctx.lineTo(q[0], q[1]); }
+      const h = map(head); ctx.lineTo(h[0], h[1]); ctx.stroke();
+      if (p.d <= p.t.L) { ctx.fillStyle = "#fff4e0"; ctx.shadowColor = "#ffcf96"; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(h[0], h[1], 2.6, 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+    }
+  }
+
+  function loop(ts){
+    if (!running) return;
+    const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts;
+    spawnAcc += dt;
+    while (spawnAcc > .09) { spawnAcc -= .09; spawn(traces[(Math.random() * traces.length) | 0], Math.random() < .5); }
+    if (mouse.on && Math.random() < .25) { const n = nearest(mouse.x, mouse.y, 4); spawn(n[(Math.random() * n.length) | 0], Math.random() < .5); }
+    draw(dt);
+    requestAnimationFrame(loop);
+  }
+
+  const hero = cv.parentElement;
+  hero.addEventListener("pointermove", e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.on = true; if (reduce) draw(0); });
+  hero.addEventListener("pointerleave", () => { mouse.on = false; if (reduce) draw(0); });
+  hero.addEventListener("pointerdown", e => {
+    if (e.target.closest("a,button")) return;
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    nearest(x, y, 14).forEach(t => { spawn(t, false); spawn(t, true); });
+  });
+
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(build, 200); });
+  build();
+  if (!reduce) {
+    new IntersectionObserver(es => { const v = es[0].isIntersecting; if (v && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); } else if (!v) running = false; }).observe(cv);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) running = false; else if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); } });
+  }
+})();
+
+
+
+/* ---------- 3. Servo istorija slenkant ---------- */
+(function(){
+  const steps = [...document.querySelectorAll(".step")], scenes = [...document.querySelectorAll(".scene")], dots = [...document.querySelectorAll(".dots i")];
+  const titles = ["➕ Naujas darbas", "➕ Naujas darbas", "✏ Darbai ir dalys", "🔧 Darbas #216 — PVZ 001", "💰 Sąskaita faktūra"];
+  const wt = document.getElementById("wtitle"), typed = document.getElementById("typed");
+  let cur = 0, typing = 0;
+  function typeIt(){
+    if (reduce) return;
+    const id = ++typing; typed.textContent = ""; let i = 0;
+    (function nx(){ if (id !== typing) return; if (i < 7) { typed.textContent += "PVZ 001"[i++]; setTimeout(nx, 130); } })();
+  }
+  function go(i){
+    if (i === cur) return; cur = i;
+    steps.forEach((s, k) => s.classList.toggle("on", k === i));
+    scenes.forEach((s, k) => s.classList.toggle("on", k === i));
+    wt.textContent = titles[i];
+    if (i === 0) typeIt();
+    if (mobileQ.matches) dots.forEach((d, k) => d.firstElementChild.style.transform = `scaleX(${k <= i ? 1 : 0})`);
+  }
+  const mobileQ = matchMedia("(max-width:960px)");
+  if (mobileQ.matches) dots[0].firstElementChild.style.transform = "scaleX(1)";
+  const mobile = matchMedia("(max-width:960px)").matches;
+  if (!mobile) {
+    // Tikslus sekimas: pagal tai, kiek žingsnių bloko praėjo ekrano vidurys
+    const box = steps[0].parentElement, bars = dots.map(d => d.firstElementChild), n = steps.length;
+    function track(){
+      const r = box.getBoundingClientRect();
+      const p = clamp((innerHeight / 2 - r.top) / r.height, 0, .9999);
+      const i = Math.floor(p * n), frac = p * n - i;
+      bars.forEach((b, k) => b.style.transform = `scaleX(${k < i ? 1 : k === i ? Math.max(frac, .04) : 0})`);
+      go(i);
+    }
+    let rq = 0;
+    addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; track(); }); }, { passive: true });
+    addEventListener("resize", track);
+    track();
+  } else {
+    // Telefone: langas virš žingsnių, žingsniai keičiasi patys arba paspaudus
+    let auto = reduce ? 0 : setInterval(() => go((cur + 1) % steps.length), 4500);
+    steps.forEach(s => s.addEventListener("click", e => {
+      if (e.target.closest("a")) return;
+      clearInterval(auto); auto = 0; go(+s.dataset.i);
+    }));
+  }
+  new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { typeIt(); o.disconnect(); } }, { threshold: .4 }).observe(document.getElementById("win"));
+  const win = document.getElementById("win"), stage = win.parentElement;
+  if (fine && !reduce) {
+    stage.addEventListener("pointermove", e => {
+      const r = stage.getBoundingClientRect(), kx = (e.clientX - r.left) / r.width - .5, ky = (e.clientY - r.top) / r.height - .5;
+      win.style.setProperty("--ry", (kx * 14) + "deg"); win.style.setProperty("--rx", (-ky * 10) + "deg");
+    });
+    stage.addEventListener("pointerleave", () => { win.style.removeProperty("--ry"); win.style.removeProperty("--rx"); });
+  }
+})();
+
+/* ---------- 4. Takelis per visą puslapį ---------- */
+(function(){
+  const main = document.getElementById("main"), svg = document.getElementById("spine");
+  const NS = "http://www.w3.org/2000/svg";
+  let path, glow, head, nodes = [], len = 0, H = 0;
+  function build(){
+    if (getComputedStyle(svg.closest(".spine-box")).display === "none") return;
+    svg.innerHTML = "";
+    const top = main.getBoundingClientRect().top + scrollY;
+    H = main.offsetHeight;
+    const ys = [...main.querySelectorAll("[data-node]")].map(n => n.getBoundingClientRect().top + scrollY - top + 26);
+    const X = 14, J = 30;
+    let d = `M ${X} 0`;
+    ys.forEach(y => { d += ` L ${X} ${y - 40} L ${X + J} ${y - 10} L ${X + J} ${y + 10} L ${X} ${y + 40}`; });
+    d += ` L ${X} ${H}`;
+    svg.setAttribute("viewBox", `0 0 60 ${H}`); svg.setAttribute("height", H);
+    const base = document.createElementNS(NS, "path"); base.setAttribute("d", d); base.setAttribute("fill", "none"); base.setAttribute("stroke", "#232830"); base.setAttribute("stroke-width", "2"); svg.appendChild(base);
+    glow = document.createElementNS(NS, "path"); glow.setAttribute("d", d); glow.setAttribute("fill", "none"); glow.setAttribute("stroke", "#d4874a"); glow.setAttribute("stroke-width", "2.4"); glow.setAttribute("stroke-linejoin", "round"); glow.style.filter = "drop-shadow(0 0 5px #d4874a)"; svg.appendChild(glow);
+    path = glow; len = path.getTotalLength();
+    path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+    nodes = ys.map(y => {
+      const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", X + J); c.setAttribute("cy", y); c.setAttribute("r", 6);
+      c.setAttribute("fill", "#0a0b0d"); c.setAttribute("stroke", "#4a515c"); c.setAttribute("stroke-width", "2"); svg.appendChild(c);
+      return { c, y };
+    });
+    head = document.createElementNS(NS, "circle"); head.setAttribute("r", 4); head.setAttribute("fill", "#fff4e0"); head.style.filter = "drop-shadow(0 0 6px #ffcf96)"; svg.appendChild(head);
+    upd();
+  }
+  function upd(){
+    if (!path) return;
+    const top = main.getBoundingClientRect().top;
+    const yDraw = clamp(innerHeight * .55 - top, 0, H);
+    // ilgis iki yDraw (paieška pagal y)
+    let lo = 0, hi = len;
+    for (let k = 0; k < 18; k++) { const m = (lo + hi) / 2; if (path.getPointAtLength(m).y < yDraw) lo = m; else hi = m; }
+    path.style.strokeDashoffset = len - lo;
+    const p = path.getPointAtLength(lo); head.setAttribute("cx", p.x); head.setAttribute("cy", p.y);
+    nodes.forEach(n => { const on = n.y <= yDraw; n.c.setAttribute("fill", on ? "#ffcf96" : "#0a0b0d"); n.c.setAttribute("stroke", on ? "#ffcf96" : "#4a515c"); });
+  }
+  let rq = 0;
+  addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; upd(); }); }, { passive: true });
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(build, 250); });
+  addEventListener("load", build);
+  if (document.fonts) document.fonts.ready.then(build);
+  build();
+})();
+
+/* ---------- 5. Magnetiniai mygtukai ---------- */
+if (fine && !reduce) document.querySelectorAll(".mag").forEach(b => {
+  b.addEventListener("pointermove", e => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .22}px, ${(e.clientY - r.top - r.height / 2) * .35}px)`; });
+  b.addEventListener("pointerleave", () => b.style.transform = "");
+});
+
+</script>
+</body>
+</html>
