@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="115 102 535 580"><defs><linearGradient id="kl2t" gradientUnits="userSpaceOnUse" x1="566" y1="105" x2="462" y2="245"><stop offset=".25" stop-color="#d4874a"/><stop offset="1" stop-color="#d4874a" stop-opacity="0"/></linearGradient>
+<linearGradient id="kl2b" gradientUnits="userSpaceOnUse" x1="566" y1="682" x2="462" y2="542"><stop offset=".25" stop-color="#d4874a"/><stop offset="1" stop-color="#d4874a" stop-opacity="0"/></linearGradient>
+<mask id="kl2" maskUnits="userSpaceOnUse" x="0" y="0" width="780" height="780">
+<path fill="#fff" d="M137 112H278a12 12 0 0 1 12 12V660a12 12 0 0 1-12 12H137a12 12 0 0 1-12-12V124a12 12 0 0 1 12-12z"/><path fill="#fff" d="M285 312H340L527 115H640L432 393.5L640 672H527L340 475H285z"/>
+<g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"><path d="M566 105L352 393.5L566 682" stroke-width="14" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M268 246Q218 246 218 292V348Q218 391 168 391Q218 391 218 434V500Q218 546 268 546" stroke-width="30"/></g></mask></defs>
+<rect x="0" y="0" width="780" height="780" fill="#f3efe9" mask="url(#kl2)"/>
+<path d="M561 112L462 245" stroke="url(#kl2t)" stroke-width="14" fill="none"/><path d="M561 672L462 539" stroke="url(#kl2b)" stroke-width="14" fill="none"/>
+<path d="M568 286Q604 286 604 320V356Q604 391 638 391Q604 391 604 426V462Q604 496 568 496" fill="none" stroke="#d4874a" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/></svg>
