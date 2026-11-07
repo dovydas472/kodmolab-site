@@ -11,7 +11,7 @@
 <meta property="og:title" content="Kodmo Auto – autoserviso valdymo programa">
 <meta property="og:description" content="Darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai vienoje programoje. Veikia jūsų kompiuteryje.">
 <meta property="og:url" content="https://kodmolab.lt/auto/">
-<meta property="og:image" content="https://kodmolab.lt/auto/og.jpg?v=2">
+<meta property="og:image" content="https://kodmolab.lt/auto/og.jpg?v=3">
 <meta property="og:locale" content="lt_LT">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://kodmolab.lt/auto/">
@@ -480,10 +480,12 @@ const IMAGES = {
   "darbai":          { t: "Visi darbai", w: 2360, h: 1320 },
   "darbo-detales":   { t: "Darbo detalės", w: 2040, h: 1300 },
   "automobiliai":    { t: "Automobiliai ir istorija", w: 2080, h: 1360 },
+  "sandelis":        { t: "Sandėlis – dalys", w: 2200, h: 1200 },
   "saskaitos":       { t: "Sąskaitų faktūrų valdymas", w: 2400, h: 1240 },
   "saskaita-pdf":    { t: "Sąskaita faktūra (PDF)", w: 1191, h: 1684 },
   "skolos":          { t: "Neapmokėtos sąskaitos", w: 2200, h: 840 },
   "vta":             { t: "VTA priminimai", w: 2200, h: 920 },
+  "ataskaitos":      { t: "Ataskaitos", w: 2360, h: 2160 },
   "tel-direktorius": { t: "Telefonas: direktorius", w: 585, h: 1266 },
   "tel-darbai":      { t: "Telefonas: mechaniko darbai", w: 585, h: 1266 },
   "tel-detales":     { t: "Telefonas: darbo detalės", w: 585, h: 1266 },
@@ -505,6 +507,9 @@ const PARTS = [
   { k: "automobiliai", tab: "Automobiliai", title: "🚗 Automobiliai ir istorija",
     h3: "Keli automobiliai vienam klientui", path: "Klientai → Automobiliai ir istorija",
     li: ["Kiekvienam automobiliui saugomi VIN, rida ir VTA data.", "Remontų istorija pagal automobilį.", "Parduotą automobilį galima perkelti naujam savininkui."] },
+  { k: "sandelis", tab: "Sandėlis", title: "📦 Sandėlis – dalys",
+    h3: "Atsargos ir rezervavimas", path: "SANDĖLIS → Sandėlis (dalys · padangos · ratlankiai)",
+    li: ["Dalys skaičiuojamos vienetais, litrais arba komplektais.", "Darbui priskirta dalis rezervuojama, kitam darbui ji nebesirodo kaip laisva.", "Kai laisvas likutis nukrenta žemiau minimumo, eilutė pažymima raudonai."] },
   { k: "saskaitos", tab: "Sąskaitos", title: "💰 Sąskaitų faktūrų valdymas",
     h3: "Sąskaitos ir mokėjimai", path: "BUHALTERIJA → Sąskaitos faktūros",
     li: ["Serija ir numeris suteikiami automatiškai.", "Išrašytos sąskaitos turinys vėliau nebesikeičia.", "Galima apmokėti dalimis, įvairiais būdais."] },
@@ -517,6 +522,9 @@ const PARTS = [
   { k: "vta", tab: "VTA priminimai", title: "📋 Direktoriaus suvestinė",
     h3: "Techninės apžiūros terminai", path: "Patvirtinimai & Skolos → VTA priminimai",
     li: ["Rodomi automobiliai, kurių VTA baigiasi per 14 dienų.", "Pasibaigę terminai pažymėti raudonai.", "Priminimas klientui išsiunčiamas vienu mygtuku."] },
+  { k: "ataskaitos", tab: "Ataskaitos", title: "📊 Ataskaitos",
+    h3: "Pajamos, išlaidos ir pelnas", path: "BUHALTERIJA → Ataskaitos (Excel)",
+    li: ["Pajamos, išlaidos ir pelnas pagal mėnesį.", "Populiariausios paslaugos ir mokėjimai pagal būdą.", "Mėnesio ir metinė ataskaita Excel formatu, CSV failai buhalterei."] },
 ];
 
 /* ---------- Peržiūra per visą ekraną: didinimas pirštais, dvigubu bakstelėjimu, ratuku ---------- */
