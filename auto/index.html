@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kodmo Auto – autoserviso valdymo programa</title>
 <meta name="description" content="Kodmo Auto – autoserviso valdymo programa: darbai, klientai, automobiliai, sandėlis, sąskaitos ir mokėjimai. Veikia jūsų kompiuteryje.">
-<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/anybody-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/anybody-latin-ext-standard-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/instrument-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/instrument-sans-latin-ext-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="icon" href="/auto/favicon.ico" sizes="48x48"><link rel="icon" href="/auto/favicon.svg" type="image/svg+xml"><link rel="icon" href="/auto/icon-192.png" type="image/png" sizes="192x192"><link rel="apple-touch-icon" href="/auto/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kodmo Auto – autoserviso valdymo programa">
@@ -75,7 +75,7 @@ nav .wrap{display:flex;justify-content:space-between;align-items:center;padding-
 .combo{position:relative;padding-bottom:40px;perspective:1400px}
 .frame{background:var(--app);border:1px solid #2c323b;border-radius:10px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.65),0 0 0 1px rgba(242,163,58,.05)}
 .tb{display:flex;justify-content:space-between;align-items:center;background:#252a32;padding:8px 12px;font-size:13px;color:#cfd3d9;gap:12px}
-.tb .ctl{font-family:var(--mono);color:#868d97;letter-spacing:.6em;font-size:11px;white-space:nowrap}
+.tb .ctl{font-family:var(--mono);color:#9aa1ac;letter-spacing:.6em;font-size:11px;white-space:nowrap}
 .combo .frame{transform:rotateY(-9deg) rotateX(3deg);transition:transform .35s cubic-bezier(.2,.8,.2,1);will-change:transform}
 .combo .frame img{cursor:zoom-in}
 .phone{border:9px solid #2a2f37;border-radius:30px;overflow:hidden;background:#0f1114;box-shadow:0 30px 70px rgba(0,0,0,.65)}
@@ -288,7 +288,7 @@ footer a{color:var(--dim)}
     <div class="combo" id="combo">
       <div class="frame">
         <div class="tb"><span>📋 Visi darbai</span><span class="ctl">–☐✕</span></div>
-        <img src="img/darbai.webp" width="2360" height="1320" data-view="darbai" alt="Programos langas „Visi darbai“ su spalvotomis darbų būsenomis">
+        <img src="img/darbai.webp" width="2360" height="1320" fetchpriority="high" data-view="darbai" alt="Programos langas „Visi darbai“ su spalvotomis darbų būsenomis">
       </div>
       <div class="phone" data-view="tel-darbai"><img src="img/tel-darbai.webp" width="585" height="1266" alt="Mechaniko darbų sąrašas telefone"></div>
     </div>

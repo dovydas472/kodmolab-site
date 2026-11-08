@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kodmo Lab – programinė įranga smulkiam verslui</title>
 <meta name="description" content="Kodmo Lab – Lietuvos programinės įrangos studija. Kuriame programas smulkiam verslui.">
-<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/anybody-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/anybody-latin-ext-standard-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/instrument-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/instrument-sans-latin-ext-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kodmo Lab – programinė įranga smulkiam verslui">
@@ -58,7 +58,7 @@ nav .wrap{display:flex;justify-content:space-between;align-items:center;padding-
 .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(90deg,rgba(10,11,13,.9) 0%,rgba(10,11,13,.6) 40%,rgba(10,11,13,0) 75%),
              linear-gradient(0deg,rgba(10,11,13,.9) 0%,rgba(10,11,13,0) 40%)}
-.hero-txt{position:relative;z-index:2;padding-bottom:80px;padding-top:140px;pointer-events:none}
+.hero-txt{position:relative;z-index:2;width:100%;padding-bottom:80px;padding-top:140px;pointer-events:none}
 .hero-txt a{pointer-events:auto}
 .hero h1{font-size:clamp(44px,8.2vw,122px);font-weight:900;letter-spacing:-.01em;pointer-events:auto}
 .hero h1 .ln{display:block;white-space:nowrap}
@@ -117,7 +117,7 @@ section{position:relative;z-index:1;padding:110px 0;border-bottom:1px solid var(
 .win{width:100%;max-width:520px;background:#1d2128;border:1px solid #2c323b;border-radius:8px;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(242,163,58,.05);overflow:hidden;font-size:14px;
   transform:perspective(1100px) rotateY(var(--ry,-6deg)) rotateX(var(--rx,3deg));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .tb{display:flex;justify-content:space-between;align-items:center;background:#252a32;padding:9px 14px;font-size:13px;color:#dfe2e7}
-.tb .ctl{font-family:var(--mono);color:#868d97;letter-spacing:.6em;font-size:11px}
+.tb .ctl{font-family:var(--mono);color:#9aa1ac;letter-spacing:.6em;font-size:11px}
 .scenes{position:relative;height:340px}
 .scene{position:absolute;inset:0;padding:18px;display:grid;gap:12px;align-content:start;opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s;pointer-events:none}
 .scene.on{opacity:1;transform:none;pointer-events:auto}
@@ -396,14 +396,25 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
       ln.appendChild(s); chars.push(s);
     }
   });
+  /* aukštis užfiksuojamas, kad animacija ir šrifto įkėlimas nestumdytų puslapio (CLS) */
+  let lockT = 0;
+  const lock = () => { h.style.height = ""; h.style.height = h.offsetHeight + "px"; };
+  lock();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(lock);
+  addEventListener("resize", () => { clearTimeout(lockT); lockT = setTimeout(lock, 150); });
   if (reduce) return;
   const glyphs = "01<>/\\#_*+=KODMLAB";
-  let f = 0;
-  const t = setInterval(() => {
-    f++;
-    chars.forEach((s, i) => { s.textContent = f >= 6 + i * 1.2 ? s.dataset.c : glyphs[(Math.random() * glyphs.length) | 0]; });
-    if (f > 6 + chars.length * 1.2) { clearInterval(t); chars.forEach(s => s.textContent = s.dataset.c); }
-  }, 40);
+  /* „dekodavimas": raidžių plotis užfiksuojamas, kad keičiami simboliai nestumdytų eilučių (CLS) */
+  function scramble(){
+    chars.forEach(s => { s.style.width = s.getBoundingClientRect().width + "px"; s.style.textAlign = "center"; });
+    let f = 0;
+    const t = setInterval(() => {
+      f++;
+      chars.forEach((s, i) => { s.textContent = f >= 6 + i * 1.2 ? s.dataset.c : glyphs[(Math.random() * glyphs.length) | 0]; });
+      if (f > 6 + chars.length * 1.2) { clearInterval(t); chars.forEach(s => { s.textContent = s.dataset.c; s.style.width = ""; s.style.textAlign = ""; }); }
+    }, 40);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scramble); else scramble();
 
   if (!fine) return;
   let mx = -9999, my = -9999, raf = 0;
